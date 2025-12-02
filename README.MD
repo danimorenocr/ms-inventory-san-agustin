@@ -25,10 +25,16 @@ ms-inventory/
 │   │   │   ├── subparts.module.ts
 │   │   │   ├── dto/
 │   │   │   └── repository/
-│   │   └── productsBase/
-│   │       ├── products.controller.ts
-│   │       ├── products.service.ts
-│   │       ├── products.module.ts
+│   │   ├── productsBase/
+│   │   │   ├── products.controller.ts
+│   │   │   ├── products.service.ts
+│   │   │   ├── products.module.ts
+│   │   │   ├── dto/
+│   │   │   └── repository/
+│   │   └── lote/
+│   │       ├── lote.controller.ts
+│   │       ├── lote.service.ts
+│   │       ├── lote.module.ts
 │   │       ├── dto/
 │   │       └── repository/
 │   ├── app.module.ts
@@ -88,6 +94,16 @@ npm run start:dev
 - `PATCH /products-base/:id` - Actualizar producto
 - `DELETE /products-base/:id` - Desactivar producto (soft delete)
 - `DELETE /products-base/:id/hard` - Eliminar permanentemente
+
+### Lotes (`/lotes`)
+
+- `GET /lotes` - Listar todos los lotes
+- `GET /lotes?tipoAnimal=res` - Filtrar por tipo de animal
+- `GET /lotes?tipoIngreso=matadero` - Filtrar por tipo de ingreso
+- `GET /lotes/:id` - Obtener lote por ID con todas sus relaciones
+- `POST /lotes` - Crear nuevo lote
+- `PATCH /lotes/:id` - Actualizar lote
+- `DELETE /lotes/:id` - Eliminar lote
 
 **Documentación completa:** `http://localhost:3000/api/docs`
 
