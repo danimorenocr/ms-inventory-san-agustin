@@ -31,10 +31,16 @@ ms-inventory/
 │   │   │   ├── products.module.ts
 │   │   │   ├── dto/
 │   │   │   └── repository/
-│   │   └── lote/
-│   │       ├── lote.controller.ts
-│   │       ├── lote.service.ts
-│   │       ├── lote.module.ts
+│   │   ├── lote/
+│   │   │   ├── lote.controller.ts
+│   │   │   ├── lote.service.ts
+│   │   │   ├── lote.module.ts
+│   │   │   ├── dto/
+│   │   │   └── repository/
+│   │   └── categoriesLote/
+│   │       ├── categorielote.controller.ts
+│   │       ├── categorielote.service.ts
+│   │       ├── categorielote.module.ts
 │   │       ├── dto/
 │   │       └── repository/
 │   ├── app.module.ts
@@ -104,6 +110,16 @@ npm run start:dev
 - `POST /lotes` - Crear nuevo lote
 - `PATCH /lotes/:id` - Actualizar lote
 - `DELETE /lotes/:id` - Eliminar lote
+
+### Categorías de Lote (`/categorias-lote`)
+
+- `GET /categorias-lote` - Listar todas las categorías de lote
+- `GET /categorias-lote?idLote=1` - Filtrar por ID de lote
+- `GET /categorias-lote?idCategoriaBase=2` - Filtrar por ID de categoría base
+- `GET /categorias-lote/:id` - Obtener categoría de lote por ID
+- `POST /categorias-lote` - Crear nueva categoría de lote
+- `PATCH /categorias-lote/:id` - Actualizar categoría de lote
+- `DELETE /categorias-lote/:id` - Eliminar categoría de lote
 
 **Documentación completa:** `http://localhost:3000/api/docs`
 
