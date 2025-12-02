@@ -13,10 +13,16 @@ ms-inventory/
 │   ├── infraestructure/
 │   │   └── prisma/
 │   ├── modules/
-│   │   └── categoriesBase/
-│   │       ├── categories.controller.ts
-│   │       ├── categories.service.ts
-│   │       ├── categories.module.ts
+│   │   ├── categoriesBase/
+│   │   │   ├── categories.controller.ts
+│   │   │   ├── categories.service.ts
+│   │   │   ├── categories.module.ts
+│   │   │   ├── dto/
+│   │   │   └── repository/
+│   │   └── subpartsBase/
+│   │       ├── subparts.controller.ts
+│   │       ├── subparts.service.ts
+│   │       ├── subparts.module.ts
 │   │       ├── dto/
 │   │       └── repository/
 │   ├── app.module.ts
@@ -56,6 +62,16 @@ npm run start:dev
 - `PATCH /categories-base/:id` - Actualizar categoría
 - `DELETE /categories-base/:id` - Desactivar categoría (soft delete)
 - `DELETE /categories-base/:id/hard` - Eliminar permanentemente
+
+### Subpartes Base (`/subparts-base`)
+
+- `GET /subparts-base` - Listar subpartes activas
+- `GET /subparts-base?tipoAnimal=res` - Filtrar por tipo de animal
+- `GET /subparts-base/:id` - Obtener subparte por ID
+- `POST /subparts-base` - Crear nueva subparte
+- `PATCH /subparts-base/:id` - Actualizar subparte
+- `DELETE /subparts-base/:id` - Desactivar subparte (soft delete)
+- `DELETE /subparts-base/:id/hard` - Eliminar permanentemente
 
 **Documentación completa:** `http://localhost:3000/api/docs`
 

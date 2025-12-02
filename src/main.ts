@@ -24,6 +24,7 @@ async function bootstrap() {
     .setDescription('API de gestión de inventario para carnicería')
     .setVersion('1.0')
     .addTag('Categorías Base')
+    .addTag('Subpartes Base')
     .build();
 
   const document = SwaggerModule.createDocument(app, config);
