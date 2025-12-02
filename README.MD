@@ -43,10 +43,16 @@ ms-inventory/
 │   │   │   ├── categorielote.module.ts
 │   │   │   ├── dto/
 │   │   │   └── repository/
-│   │   └── subpartsLote/
-│   │       ├── subpartsLote.controller.ts
-│   │       ├── subpartsLote.service.ts
-│   │       ├── subpartsLote.module.ts
+│   │   ├── subpartsLote/
+│   │   │   ├── subpartsLote.controller.ts
+│   │   │   ├── subpartsLote.service.ts
+│   │   │   ├── subpartsLote.module.ts
+│   │   │   ├── dto/
+│   │   │   └── repository/
+│   │   └── individualLote/
+│   │       ├── individualLote.controller.ts
+│   │       ├── individualLote.service.ts
+│   │       ├── individualLote.module.ts
 │   │       ├── dto/
 │   │       └── repository/
 │   ├── app.module.ts
@@ -137,6 +143,15 @@ npm run start:dev
 - `POST /subpartes-lote` - Crear nueva subparte de lote
 - `PATCH /subpartes-lote/:id` - Actualizar subparte de lote
 - `DELETE /subpartes-lote/:id` - Eliminar subparte de lote
+
+### Lotes Individuales (`/lotes-individuales`)
+
+- `GET /lotes-individuales` - Listar todos los lotes individuales
+- `GET /lotes-individuales?idProductoBase=1` - Filtrar por ID de producto base
+- `GET /lotes-individuales/:idLote` - Obtener lote individual por ID de lote
+- `POST /lotes-individuales` - Crear nuevo lote individual
+- `PATCH /lotes-individuales/:idLote` - Actualizar lote individual
+- `DELETE /lotes-individuales/:idLote` - Eliminar lote individual
 
 **Documentación completa:** `http://localhost:3000/api/docs`
 
