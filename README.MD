@@ -37,10 +37,16 @@ ms-inventory/
 │   │   │   ├── lote.module.ts
 │   │   │   ├── dto/
 │   │   │   └── repository/
-│   │   └── categoriesLote/
-│   │       ├── categorielote.controller.ts
-│   │       ├── categorielote.service.ts
-│   │       ├── categorielote.module.ts
+│   │   ├── categoriesLote/
+│   │   │   ├── categorielote.controller.ts
+│   │   │   ├── categorielote.service.ts
+│   │   │   ├── categorielote.module.ts
+│   │   │   ├── dto/
+│   │   │   └── repository/
+│   │   └── subpartsLote/
+│   │       ├── subpartsLote.controller.ts
+│   │       ├── subpartsLote.service.ts
+│   │       ├── subpartsLote.module.ts
 │   │       ├── dto/
 │   │       └── repository/
 │   ├── app.module.ts
@@ -120,6 +126,17 @@ npm run start:dev
 - `POST /categorias-lote` - Crear nueva categoría de lote
 - `PATCH /categorias-lote/:id` - Actualizar categoría de lote
 - `DELETE /categorias-lote/:id` - Eliminar categoría de lote
+
+### Subpartes de Lote (`/subpartes-lote`)
+
+- `GET /subpartes-lote` - Listar todas las subpartes de lote
+- `GET /subpartes-lote?idLote=1` - Filtrar por ID de lote
+- `GET /subpartes-lote?idCategoriaLote=1` - Filtrar por ID de categoría de lote
+- `GET /subpartes-lote?idSubparteBase=1` - Filtrar por ID de subparte base
+- `GET /subpartes-lote/:id` - Obtener subparte de lote por ID
+- `POST /subpartes-lote` - Crear nueva subparte de lote
+- `PATCH /subpartes-lote/:id` - Actualizar subparte de lote
+- `DELETE /subpartes-lote/:id` - Eliminar subparte de lote
 
 **Documentación completa:** `http://localhost:3000/api/docs`
 
