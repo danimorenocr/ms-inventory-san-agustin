@@ -33,7 +33,7 @@ model SubparteBase {
 
   subpartesLote SubparteLote[]
 }
-
+ 
 // Productos que existen aunque no sean desposte (Ubre, pescado entero, etc.)
 model ProductoBase {
   id        Int     @id @default(autoincrement())

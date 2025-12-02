@@ -19,10 +19,16 @@ ms-inventory/
 │   │   │   ├── categories.module.ts
 │   │   │   ├── dto/
 │   │   │   └── repository/
-│   │   └── subpartsBase/
-│   │       ├── subparts.controller.ts
-│   │       ├── subparts.service.ts
-│   │       ├── subparts.module.ts
+│   │   ├── subpartsBase/
+│   │   │   ├── subparts.controller.ts
+│   │   │   ├── subparts.service.ts
+│   │   │   ├── subparts.module.ts
+│   │   │   ├── dto/
+│   │   │   └── repository/
+│   │   └── productsBase/
+│   │       ├── products.controller.ts
+│   │       ├── products.service.ts
+│   │       ├── products.module.ts
 │   │       ├── dto/
 │   │       └── repository/
 │   ├── app.module.ts
@@ -72,6 +78,16 @@ npm run start:dev
 - `PATCH /subparts-base/:id` - Actualizar subparte
 - `DELETE /subparts-base/:id` - Desactivar subparte (soft delete)
 - `DELETE /subparts-base/:id/hard` - Eliminar permanentemente
+
+### Productos Base (`/products-base`)
+
+- `GET /products-base` - Listar productos activos
+- `GET /products-base?categoria=visceras` - Filtrar por categoría
+- `GET /products-base/:id` - Obtener producto por ID
+- `POST /products-base` - Crear nuevo producto
+- `PATCH /products-base/:id` - Actualizar producto
+- `DELETE /products-base/:id` - Desactivar producto (soft delete)
+- `DELETE /products-base/:id/hard` - Eliminar permanentemente
 
 **Documentación completa:** `http://localhost:3000/api/docs`
 
