@@ -79,6 +79,15 @@ export class CategoriaLoteRepository {
     });
   }
 
+  async findDuplicate(idLote: number, idCategoriaBase: number) {
+    return this.prisma.categoriaLote.findFirst({
+      where: {
+        idLote,
+        idCategoriaBase,
+      },
+    });
+  }
+
   async update(id: number, updateCategoriaLoteDto: UpdateCategoriaLoteDto) {
     return this.prisma.categoriaLote.update({
       where: { id },

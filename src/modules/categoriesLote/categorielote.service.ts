@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
 import { CreateCategoriaLoteDto } from './dto/create-categorielote.dto';
 import { UpdateCategoriaLoteDto } from './dto/update-categorielote.dto';
 import { CategoriaLoteRepository } from './repository/categorielote.repository';
@@ -8,6 +8,18 @@ export class CategoriaLoteService {
   constructor(private readonly repository: CategoriaLoteRepository) {}
 
   async create(createCategoriaLoteDto: CreateCategoriaLoteDto) {
+    // Verificar si ya existe la categoría en el lote
+    const existing = await this.repository.findDuplicate(
+      createCategoriaLoteDto.idLote,
+      createCategoriaLoteDto.idCategoriaBase,
+    );
+
+    if (existing) {
+      throw new ConflictException(
+        `La categoría ya existe en el lote ${createCategoriaLoteDto.idLote}`,
+      );
+    }
+
     return this.repository.create(createCategoriaLoteDto);
   }
 
