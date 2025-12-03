@@ -28,16 +28,59 @@ export class SubparteLoteController {
   }
 
   @Get()
-  @ApiOperation({ summary: 'Obtener todas las subpartes de lote' })
-  @ApiQuery({ name: 'idLote', required: false, description: 'Filtrar por ID de lote' })
-  @ApiQuery({ name: 'idCategoriaLote', required: false, description: 'Filtrar por ID de categoría de lote' })
-  @ApiQuery({ name: 'idSubparteBase', required: false, description: 'Filtrar por ID de subparte base' })
-  @ApiResponse({ status: 200, description: 'Lista de subpartes de lote' })
+  @ApiOperation({ 
+    summary: 'Obtener todas las subpartes de lote',
+    description: `
+    Obtiene subpartes de lote con filtros opcionales:
+    - Sin parámetros: Retorna todas las subpartes
+    - idLote + idCategoriaBase: Retorna subpartes de una categoría específica en un lote (Ej: Todas las subpartes de "BRAZOS" del lote 1)
+    - idLote: Retorna todas las subpartes del lote
+    - idCategoriaLote: Retorna subpartes de una categoría de lote específica
+    - idSubparteBase: Retorna todas las instancias de una subparte base en todos los lotes
+    `
+  })
+  @ApiQuery({ 
+    name: 'idLote', 
+    required: false, 
+    type: Number,
+    description: 'ID del lote',
+    example: 1
+  })
+  @ApiQuery({ 
+    name: 'idCategoriaBase', 
+    required: false, 
+    type: Number,
+    description: 'ID de la categoría base (COGOTE, BRAZOS, etc.). Debe usarse junto con idLote para obtener subpartes de una categoría específica',
+    example: 2
+  })
+  @ApiQuery({ 
+    name: 'idCategoriaLote', 
+    required: false, 
+    type: Number,
+    description: 'ID de la categoría de lote (instancia específica de categoría en un lote)',
+    example: 5
+  })
+  @ApiQuery({ 
+    name: 'idSubparteBase', 
+    required: false, 
+    type: Number,
+    description: 'ID de la subparte base (Bola de brazo, Murillo, etc.)',
+    example: 3
+  })
+  @ApiResponse({ 
+    status: 200, 
+    description: 'Lista de subpartes de lote filtradas según los parámetros proporcionados'
+  })
   findAll(
     @Query('idLote', new ParseIntPipe({ optional: true })) idLote?: number,
+    @Query('idCategoriaBase', new ParseIntPipe({ optional: true })) idCategoriaBase?: number,
     @Query('idCategoriaLote', new ParseIntPipe({ optional: true })) idCategoriaLote?: number,
     @Query('idSubparteBase', new ParseIntPipe({ optional: true })) idSubparteBase?: number,
   ) {
+    // Buscar por lote y categoría base combinados
+    if (idLote && idCategoriaBase) {
+      return this.subparteLoteService.findByLoteAndCategoria(idLote, idCategoriaBase);
+    }
     if (idLote) {
       return this.subparteLoteService.findByLote(idLote);
     }

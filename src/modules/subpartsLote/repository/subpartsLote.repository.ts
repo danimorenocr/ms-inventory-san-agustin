@@ -92,6 +92,30 @@ export class SubparteLoteRepository {
     });
   }
 
+  async findByLoteAndCategoria(idLote: number, idCategoriaBase: number) {
+    return this.prisma.subparteLote.findMany({
+      where: {
+        idLote,
+        categoriaLote: {
+          idCategoriaBase,
+        },
+      },
+      include: {
+        lote: true,
+        categoriaLote: {
+          include: {
+            categoriaBase: true,
+          },
+        },
+        subparteBase: true,
+      },
+      orderBy: [
+        { subparteBase: { nombre: 'asc' } },
+        { fechaPesado: 'desc' },
+      ],
+    });
+  }
+
   async update(id: number, updateSubparteLoteDto: UpdateSubparteLoteDto) {
     return this.prisma.subparteLote.update({
       where: { id },

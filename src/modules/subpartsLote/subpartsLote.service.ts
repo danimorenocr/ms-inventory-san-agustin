@@ -35,6 +35,10 @@ export class SubparteLoteService {
     return this.repository.findBySubparteBase(idSubparteBase);
   }
 
+  async findByLoteAndCategoria(idLote: number, idCategoriaBase: number) {
+    return this.repository.findByLoteAndCategoria(idLote, idCategoriaBase);
+  }
+
   async update(id: number, updateSubparteLoteDto: UpdateSubparteLoteDto) {
     await this.findOne(id);
     return this.repository.update(id, updateSubparteLoteDto);
