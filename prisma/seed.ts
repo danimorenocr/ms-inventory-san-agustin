@@ -10,12 +10,12 @@ async function main() {
   // 1. Categorías Base (Res)
   // ==========================================
   const categoriasBase = [
-    { id: 1, tipoAnimal: "res", nombre: "COGOTE" },
-    { id: 2, tipoAnimal: "res", nombre: "BRAZOS" },
-    { id: 3, tipoAnimal: "res", nombre: "PIERNAS" },
-    { id: 4, tipoAnimal: "res", nombre: "COSTILLAS" },
-    { id: 5, tipoAnimal: "res", nombre: "OTROS" },
-    { id: 6, tipoAnimal: "res", nombre: "VISCERAS" },
+    { id: 1, tipoAnimal: "res", nombre: "Cogote" },
+    { id: 2, tipoAnimal: "res", nombre: "Brazos" },
+    { id: 3, tipoAnimal: "res", nombre: "Piernas" },
+    { id: 4, tipoAnimal: "res", nombre: "Costillas" },
+    { id: 5, tipoAnimal: "res", nombre: "Otros" },
+    { id: 6, tipoAnimal: "res", nombre: "Vísceras" },
   ];
 
   await prisma.categoriaBase.createMany({
@@ -111,6 +111,129 @@ async function main() {
   });
 
   console.log("✔ Subpartes base insertadas.");
+
+  // ==========================================
+  // 3. Productos Base (Individuales)
+  // ==========================================
+  const productosBase = [
+    // Vísceras de res
+    { nombre: "Hígado de res", categoria: "vísceras" },
+    { nombre: "Corazón de res", categoria: "vísceras" },
+    { nombre: "Riñones de res", categoria: "vísceras" },
+    { nombre: "Lengua de res", categoria: "vísceras" },
+    { nombre: "Mondongo", categoria: "vísceras" },
+    
+    // Pescados
+    { nombre: "Salmón", categoria: "pescado" },
+    { nombre: "Tilapia", categoria: "pescado" },
+    { nombre: "Bagre", categoria: "pescado" },
+    { nombre: "Trucha", categoria: "pescado" },
+    { nombre: "Pargo", categoria: "pescado" },
+    
+    // Pollo
+    { nombre: "Pechuga de pollo", categoria: "pollo" },
+    { nombre: "Muslo de pollo", categoria: "pollo" },
+    { nombre: "Alas de pollo", categoria: "pollo" },
+    { nombre: "Pierna de pollo", categoria: "pollo" },
+    { nombre: "Pollo entero", categoria: "pollo" },
+    
+    // Cerdo
+    { nombre: "Chuleta de cerdo", categoria: "cerdo" },
+    { nombre: "Costilla de cerdo", categoria: "cerdo" },
+    { nombre: "Lomo de cerdo", categoria: "cerdo" },
+    { nombre: "Tocino", categoria: "cerdo" },
+    { nombre: "Pernil de cerdo", categoria: "cerdo" },
+    
+    // Embutidos
+    { nombre: "Chorizo", categoria: "embutidos" },
+    { nombre: "Salchicha", categoria: "embutidos" },
+    { nombre: "Morcilla", categoria: "embutidos" },
+    { nombre: "Longaniza", categoria: "embutidos" },
+  ];
+
+  await prisma.productoBase.createMany({
+    data: productosBase,
+    skipDuplicates: true,
+  });
+
+  console.log("✔ Productos base insertados.");
+
+  // ==========================================
+  // 4. Proveedores
+  // ==========================================
+  const proveedores = [
+    {
+      nombre: "Ganadería El Paraíso",
+      tipoAnimal: "res",
+      telefono: "3101234567",
+      ciudad: "Villavicencio",
+      tipoProveedor: "natural",
+      direccion: "Vereda La Reforma",
+      cedulaNit: "1234567890",
+      correo: "contacto@ganaderiaparaiso.com",
+      observacion: "Proveedor confiable de ganado de primera",
+    },
+    {
+      nombre: "Frigorífico Los Andes",
+      tipoAnimal: "res",
+      telefono: "3209876543",
+      ciudad: "Bogotá",
+      tipoProveedor: "juridica",
+      direccion: "Calle 80 # 45-67",
+      cedulaNit: "900123456-7",
+      correo: "ventas@frigorifico-andes.com",
+      observacion: "Entregas puntuales, excelente calidad",
+    },
+    {
+      nombre: "Porcícola San Martín",
+      tipoAnimal: "cerdo",
+      telefono: "3151234567",
+      ciudad: "Bucaramanga",
+      tipoProveedor: "natural",
+      direccion: "Finca La Esperanza km 15",
+      cedulaNit: "9876543210",
+      correo: "sanmartin@porcicola.com",
+    },
+    {
+      nombre: "Avícola Santa Rosa",
+      tipoAnimal: "pollo",
+      telefono: "3187654321",
+      ciudad: "Pereira",
+      tipoProveedor: "juridica",
+      direccion: "Zona Industrial Bloque C",
+      cedulaNit: "900987654-3",
+      correo: "pedidos@avicolasantarosa.com",
+      observacion: "Proveedor certificado, pollo fresco diario",
+    },
+    {
+      nombre: "Pescadería El Mar",
+      tipoAnimal: "pescado",
+      telefono: "3002345678",
+      ciudad: "Cartagena",
+      tipoProveedor: "natural",
+      direccion: "Mercado de Bazurto Local 45",
+      cedulaNit: "5678901234",
+      correo: "elmar@pescaderia.com",
+      observacion: "Pescado fresco del día",
+    },
+    {
+      nombre: "Distribuidora La Costa",
+      tipoAnimal: "pescado",
+      telefono: "3123456789",
+      ciudad: "Barranquilla",
+      tipoProveedor: "juridica",
+      direccion: "Avenida del Río # 30-12",
+      cedulaNit: "900456789-1",
+      correo: "ventas@lacosta.com",
+    },
+  ];
+
+  await prisma.proveedor.createMany({
+    data: proveedores,
+    skipDuplicates: true,
+  });
+
+  console.log("✔ Proveedores insertados.");
   console.log("🌱 Seed completado con éxito.");
 }
 

@@ -83,6 +83,10 @@ npx prisma generate
 npx prisma migrate dev --name init
 npx prisma db seed
 
+#Borrar bd y volver a cargar todo 
+npx prisma migrate reset --force
+
+
 # Ejecutar en desarrollo
 npm run start:dev
 ```
