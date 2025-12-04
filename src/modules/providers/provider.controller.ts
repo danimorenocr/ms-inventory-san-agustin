@@ -28,10 +28,25 @@ export class ProviderController {
   }
 
   @Get()
-  @ApiOperation({ summary: 'Obtener todos los proveedores' })
-  @ApiQuery({ name: 'tipoAnimal', required: false, description: 'Filtrar por tipo de animal (res, cerdo, pollo, pescado, producto_individual)' })
-  @ApiQuery({ name: 'tipoProveedor', required: false, description: 'Filtrar por tipo de proveedor (natural, juridica)' })
-  @ApiResponse({ status: 200, description: 'Lista de proveedores' })
+  @ApiOperation({ 
+    summary: 'Obtener todos los proveedores activos',
+    description: 'Obtiene lista de proveedores con filtros opcionales por tipo de animal o tipo de proveedor'
+  })
+  @ApiQuery({ 
+    name: 'tipoAnimal', 
+    required: false, 
+    enum: ['res', 'cerdo', 'pollo', 'pescado', 'producto_individual'],
+    description: 'Filtrar por tipo de animal que provee',
+    example: 'res'
+  })
+  @ApiQuery({ 
+    name: 'tipoProveedor', 
+    required: false, 
+    enum: ['natural', 'juridica'],
+    description: 'Filtrar por tipo de proveedor (persona natural o jurídica)',
+    example: 'natural'
+  })
+  @ApiResponse({ status: 200, description: 'Lista de proveedores filtrados' })
   findAll(
     @Query('tipoAnimal') tipoAnimal?: string,
     @Query('tipoProveedor') tipoProveedor?: string,
