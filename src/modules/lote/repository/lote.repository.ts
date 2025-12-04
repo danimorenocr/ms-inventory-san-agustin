@@ -16,6 +16,7 @@ export class LoteRepository {
   async findAll() {
     return this.prisma.lote.findMany({
       include: {
+        proveedor: true,
         categoriasLote: {
           include: {
             categoriaBase: true,
@@ -42,6 +43,7 @@ export class LoteRepository {
     return this.prisma.lote.findUnique({
       where: { id },
       include: {
+        proveedor: true,
         categoriasLote: {
           include: {
             categoriaBase: true,
@@ -71,6 +73,7 @@ export class LoteRepository {
     return this.prisma.lote.findMany({
       where: { tipoAnimal },
       include: {
+        proveedor: true,
         categoriasLote: {
           include: {
             categoriaBase: true,
@@ -97,6 +100,34 @@ export class LoteRepository {
     return this.prisma.lote.findMany({
       where: { tipoIngreso },
       include: {
+        proveedor: true,
+        categoriasLote: {
+          include: {
+            categoriaBase: true,
+          },
+        },
+        subpartesLote: {
+          include: {
+            subparteBase: true,
+          },
+        },
+        loteIndividual: {
+          include: {
+            producto: true,
+          },
+        },
+      },
+      orderBy: {
+        fechaIngreso: 'desc',
+      },
+    });
+  }
+
+  async findByProveedorId(proveedorId: number) {
+    return this.prisma.lote.findMany({
+      where: { proveedorId },
+      include: {
+        proveedor: true,
         categoriasLote: {
           include: {
             categoriaBase: true,

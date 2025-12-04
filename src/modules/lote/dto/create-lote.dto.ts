@@ -41,13 +41,12 @@ export class CreateLoteDto {
   procedencia?: string;
 
   @ApiProperty({
-    description: 'Nombre del proveedor',
-    example: 'Juan Pérez',
-    required: false,
+    description: 'ID del proveedor',
+    example: 1,
   })
-  @IsString()
-  @IsOptional()
-  proveedor?: string;
+  @IsInt()
+  @IsNotEmpty()
+  proveedorId: number;
 
   @ApiProperty({
     description: 'Indica si tiene guía',
@@ -100,6 +99,14 @@ export class CreateLoteDto {
   @IsNumber()
   @IsOptional()
   precioArroba?: number;
+
+  @ApiProperty({
+    description: 'Precio total del lote',
+    example: 4200000,
+  })
+  @IsNumber()
+  @IsNotEmpty()
+  precioTotal: number;
 
   @ApiProperty({
     description: 'Indica si el animal está limpio',

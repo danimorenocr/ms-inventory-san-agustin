@@ -48,30 +48,53 @@ model ProductoBase {
 // INGRESOS DE INVENTARIO
 // ================================
 
+
+// Proveedores
+model Proveedor {
+  id           Int      @id @default(autoincrement())
+  nombre       String
+  tipoAnimal   String   // res | cerdo | pollo | pescado | producto_individual
+  telefono     String?
+  ciudad       String?
+  tipoProveedor String   // natural | juridica
+  direccion    String?
+  cedulaNit    String
+  correo       String?
+  observacion  String?
+
+  lotes        Lote[]   // Relación 1 - N
+}
+
+
 // Lote principal: res, cerdo o compra individual
 model Lote {
   id            Int      @id @default(autoincrement())
-  tipoIngreso   String // 'matadero' | 'compra_individual'
-  tipoAnimal    String // 'res' | 'cerdo' | 'pollo' | 'pescado' | 'producto_individual'
+  tipoIngreso   String
+  tipoAnimal    String
   procedencia   String?
-  proveedor     String?
   guia          Boolean?
   fotoGuia      String?
   pesoKgInicial Float
   pesoKgActual  Float
   precioKg      Float?
   precioArroba  Float?
+  precioTotal   Float
   limpio        Boolean?
-  sexo          String? // macho/hembra
-  clasificacion String? // novilla/vaca/novillo/toro...
+  sexo          String?
+  clasificacion String?
   dientes       Int?
   fechaIngreso  DateTime @default(now())
   idUsuario     Int
+
+  // 🔗 RELACIÓN CON PROVEEDOR
+  proveedorId   Int
+  proveedor     Proveedor @relation(fields: [proveedorId], references: [id])
 
   categoriasLote CategoriaLote[]
   subpartesLote  SubparteLote[]
   loteIndividual LoteIndividual?
 }
+
 
 // ================================
 // DESPOSTE POR LOTE
@@ -120,3 +143,5 @@ model LoteIndividual {
   lote     Lote         @relation(fields: [idLote], references: [id])
   producto ProductoBase @relation(fields: [idProductoBase], references: [id])
 }
+
+

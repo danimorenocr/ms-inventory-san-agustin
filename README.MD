@@ -49,10 +49,16 @@ ms-inventory/
 │   │   │   ├── subpartsLote.module.ts
 │   │   │   ├── dto/
 │   │   │   └── repository/
-│   │   └── individualLote/
-│   │       ├── individualLote.controller.ts
-│   │       ├── individualLote.service.ts
-│   │       ├── individualLote.module.ts
+│   │   ├── individualLote/
+│   │   │   ├── individualLote.controller.ts
+│   │   │   ├── individualLote.service.ts
+│   │   │   ├── individualLote.module.ts
+│   │   │   ├── dto/
+│   │   │   └── repository/
+│   │   └── providers/
+│   │       ├── provider.controller.ts
+│   │       ├── provider.service.ts
+│   │       ├── provider.module.ts
 │   │       ├── dto/
 │   │       └── repository/
 │   ├── app.module.ts
@@ -118,8 +124,9 @@ npm run start:dev
 - `GET /lotes` - Listar todos los lotes
 - `GET /lotes?tipoAnimal=res` - Filtrar por tipo de animal
 - `GET /lotes?tipoIngreso=matadero` - Filtrar por tipo de ingreso
-- `GET /lotes/:id` - Obtener lote por ID con todas sus relaciones
-- `POST /lotes` - Crear nuevo lote
+- `GET /lotes?proveedorId=1` - Filtrar por ID de proveedor
+- `GET /lotes/:id` - Obtener lote por ID con todas sus relaciones (incluye proveedor)
+- `POST /lotes` - Crear nuevo lote (requiere proveedorId y precioTotal)
 - `PATCH /lotes/:id` - Actualizar lote
 - `DELETE /lotes/:id` - Eliminar lote
 
@@ -152,6 +159,16 @@ npm run start:dev
 - `POST /lotes-individuales` - Crear nuevo lote individual
 - `PATCH /lotes-individuales/:idLote` - Actualizar lote individual
 - `DELETE /lotes-individuales/:idLote` - Eliminar lote individual
+
+### Proveedores (`/providers`)
+
+- `GET /providers` - Listar todos los proveedores
+- `GET /providers?tipoAnimal=res` - Filtrar por tipo de animal (res, cerdo, pollo, pescado, producto_individual)
+- `GET /providers?tipoProveedor=natural` - Filtrar por tipo de proveedor (natural, juridica)
+- `GET /providers/:id` - Obtener proveedor por ID
+- `POST /providers` - Crear nuevo proveedor
+- `PATCH /providers/:id` - Actualizar proveedor
+- `DELETE /providers/:id` - Eliminar proveedor
 
 **Documentación completa:** `http://localhost:3000/api/docs`
 

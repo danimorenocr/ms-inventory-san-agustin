@@ -30,6 +30,7 @@ async function bootstrap() {
     .addTag('Categorías de Lote')
     .addTag('Subpartes de Lote')
     .addTag('Lotes Individuales')
+    .addTag('Proveedores')
     .build();
 
   const document = SwaggerModule.createDocument(app, config);

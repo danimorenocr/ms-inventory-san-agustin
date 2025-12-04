@@ -31,16 +31,21 @@ export class LoteController {
   @ApiOperation({ summary: 'Obtener todos los lotes' })
   @ApiQuery({ name: 'tipoAnimal', required: false, enum: ['res', 'cerdo', 'pollo', 'pescado', 'producto_individual'] })
   @ApiQuery({ name: 'tipoIngreso', required: false, enum: ['matadero', 'compra_individual'] })
+  @ApiQuery({ name: 'proveedorId', required: false, description: 'ID del proveedor' })
   @ApiResponse({ status: 200, description: 'Lista de lotes' })
   findAll(
     @Query('tipoAnimal') tipoAnimal?: string,
     @Query('tipoIngreso') tipoIngreso?: string,
+    @Query('proveedorId') proveedorId?: string,
   ) {
     if (tipoAnimal) {
       return this.loteService.findByTipoAnimal(tipoAnimal);
     }
     if (tipoIngreso) {
       return this.loteService.findByTipoIngreso(tipoIngreso);
+    }
+    if (proveedorId) {
+      return this.loteService.findByProveedorId(+proveedorId);
     }
     return this.loteService.findAll();
   }

@@ -75,6 +75,10 @@ export class LoteService {
     return this.repository.findByTipoIngreso(tipoIngreso);
   }
 
+  async findByProveedorId(proveedorId: number) {
+    return this.repository.findByProveedorId(proveedorId);
+  }
+
   async update(id: number, updateLoteDto: UpdateLoteDto) {
     await this.findOne(id);
     return this.repository.update(id, updateLoteDto);

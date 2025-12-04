@@ -7,6 +7,7 @@ import { LoteModule } from './modules/lote/lote.module';
 import { CategoriaLoteModule } from './modules/categoriesLote/categorielote.module';
 import { SubparteLoteModule } from './modules/subpartsLote/subpartsLote.module';
 import { LoteIndividualModule } from './modules/individualLote/individualLote.module';
+import { ProviderModule } from './modules/providers/provider.module';
 
 @Module({
   imports: [
@@ -18,6 +19,7 @@ import { LoteIndividualModule } from './modules/individualLote/individualLote.mo
     CategoriaLoteModule,
     SubparteLoteModule,
     LoteIndividualModule,
+    ProviderModule,
   ],
   controllers: [],
   providers: [],
