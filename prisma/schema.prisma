@@ -138,6 +138,7 @@ model LoteIndividual {
   idProductoBase Int
   pesoKg         Float
   precioKg       Float
+  precioTotal    Float
   fechaRegistro  DateTime @default(now())
 
   lote     Lote         @relation(fields: [idLote], references: [id])
