@@ -9,7 +9,14 @@ import {
   ParseIntPipe,
   Query,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiQuery } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiParam,
+  ApiQuery,
+} from '@nestjs/swagger';
+
 import { LoteService } from './lote.service';
 import { CreateLoteDto } from './dto/create-lote.dto';
 import { UpdateLoteDto } from './dto/update-lote.dto';
@@ -19,6 +26,9 @@ import { UpdateLoteDto } from './dto/update-lote.dto';
 export class LoteController {
   constructor(private readonly loteService: LoteService) {}
 
+  // ======================================================
+  // 📌 CREAR LOTE
+  // ======================================================
   @Post()
   @ApiOperation({ summary: 'Crear un nuevo lote' })
   @ApiResponse({ status: 201, description: 'Lote creado exitosamente' })
@@ -27,34 +37,61 @@ export class LoteController {
     return this.loteService.create(createLoteDto);
   }
 
+  // ======================================================
+  // 📌 LISTAR LOTES CON FILTROS
+  // ======================================================
   @Get()
   @ApiOperation({ summary: 'Obtener todos los lotes' })
-  @ApiQuery({ name: 'tipoAnimal', required: false, enum: ['res', 'cerdo', 'pollo', 'pescado', 'producto_individual'] })
-  @ApiQuery({ name: 'tipoIngreso', required: false, enum: ['matadero', 'compra_individual'] })
-  @ApiQuery({ name: 'proveedorId', required: false, description: 'ID del proveedor' })
-  @ApiResponse({ status: 200, description: 'Lista de lotes' })
+  @ApiQuery({ name: 'tipoAnimal', required: false })
+  @ApiQuery({ name: 'tipoIngreso', required: false })
+  @ApiQuery({ name: 'proveedorId', required: false })
   findAll(
     @Query('tipoAnimal') tipoAnimal?: string,
     @Query('tipoIngreso') tipoIngreso?: string,
     @Query('proveedorId') proveedorId?: string,
   ) {
-    if (tipoAnimal) {
-      return this.loteService.findByTipoAnimal(tipoAnimal);
-    }
-    if (tipoIngreso) {
-      return this.loteService.findByTipoIngreso(tipoIngreso);
-    }
-    if (proveedorId) {
-      return this.loteService.findByProveedorId(+proveedorId);
-    }
+    if (tipoAnimal) return this.loteService.findByTipoAnimal(tipoAnimal);
+    if (tipoIngreso) return this.loteService.findByTipoIngreso(tipoIngreso);
+    if (proveedorId) return this.loteService.findByProveedorId(+proveedorId);
+
     return this.loteService.findAll();
   }
 
+  // ======================================================
+  // 📌 REPORTES DE CARNE
+  // ======================================================
+
+  @Get('reportes/total-carne')
+  @ApiOperation({
+    summary: 'Obtener el total de carne almacenada (todas las especies)',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Totales calculados correctamente',
+  })
+  getTotalCarne() {
+    return this.loteService.getTotalCarne();
+  }
+
+  @Get('total-carne/tipo')
+  @ApiOperation({
+    summary:
+      'Obtener el total de carne por tipo de animal + total general',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Totales agrupados por tipo de animal',
+  })
+  getTotalCarnePorTipo() {
+    return this.loteService.getTotalCarnePorTipo();
+  }
+
+  // ======================================================
+  // 📌 OBTENER / ACTUALIZAR / ELIMINAR POR ID
+  // ======================================================
   @Get(':id')
   @ApiOperation({ summary: 'Obtener un lote por ID' })
   @ApiParam({ name: 'id', description: 'ID del lote' })
-  @ApiResponse({ status: 200, description: 'Lote encontrado' })
-  @ApiResponse({ status: 404, description: 'Lote no encontrado' })
   findOne(@Param('id', ParseIntPipe) id: number) {
     return this.loteService.findOne(id);
   }
@@ -62,8 +99,6 @@ export class LoteController {
   @Patch(':id')
   @ApiOperation({ summary: 'Actualizar un lote' })
   @ApiParam({ name: 'id', description: 'ID del lote' })
-  @ApiResponse({ status: 200, description: 'Lote actualizado exitosamente' })
-  @ApiResponse({ status: 404, description: 'Lote no encontrado' })
   update(
     @Param('id', ParseIntPipe) id: number,
     @Body() updateLoteDto: UpdateLoteDto,
@@ -74,8 +109,6 @@ export class LoteController {
   @Delete(':id')
   @ApiOperation({ summary: 'Eliminar un lote' })
   @ApiParam({ name: 'id', description: 'ID del lote' })
-  @ApiResponse({ status: 200, description: 'Lote eliminado exitosamente' })
-  @ApiResponse({ status: 404, description: 'Lote no encontrado' })
   remove(@Param('id', ParseIntPipe) id: number) {
     return this.loteService.remove(id);
   }
