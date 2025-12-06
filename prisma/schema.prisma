@@ -42,6 +42,7 @@ model ProductoBase {
   estado    Boolean @default(true)
 
   lotesIndividuales LoteIndividual[]
+  alertasReglas     AlertaRegla[]
 }
 
 // ================================
@@ -93,6 +94,8 @@ model Lote {
   categoriasLote CategoriaLote[]
   subpartesLote  SubparteLote[]
   loteIndividual LoteIndividual?
+  alertasReglas  AlertaRegla[]
+  registroMerma  RegistroMerma?
 }
 
 
@@ -111,7 +114,8 @@ model CategoriaLote {
   lote          Lote          @relation(fields: [idLote], references: [id])
   categoriaBase CategoriaBase @relation(fields: [idCategoriaBase], references: [id])
 
-  subpartes SubparteLote[]
+  subpartes     SubparteLote[]
+  alertasReglas AlertaRegla[]
 }
 
 // Subpartes asociadas a una categoría del desposte (ej: murillo, bola)
@@ -126,6 +130,8 @@ model SubparteLote {
   lote          Lote          @relation(fields: [idLote], references: [id])
   categoriaLote CategoriaLote @relation(fields: [idCategoriaLote], references: [id])
   subparteBase  SubparteBase  @relation(fields: [idSubparteBase], references: [id])
+
+  alertasReglas AlertaRegla[]
 }
 
 // ================================
@@ -141,8 +147,10 @@ model LoteIndividual {
   precioTotal    Float
   fechaRegistro  DateTime @default(now())
 
-  lote     Lote         @relation(fields: [idLote], references: [id])
-  producto ProductoBase @relation(fields: [idProductoBase], references: [id])
+  lote          Lote         @relation(fields: [idLote], references: [id])
+  producto      ProductoBase @relation(fields: [idProductoBase], references: [id])
+
+  alertasReglas AlertaRegla[]
 }
 
 model Alerta {
@@ -153,6 +161,47 @@ model Alerta {
   leida     Boolean  @default(false)
 }
 
+model AlertaRegla {
+  id                 Int      @id @default(autoincrement())
+  
+  // A qué entidad aplica esta regla
+  loteId             Int?
+  categoriaLoteId    Int?
+  subparteLoteId     Int?
+  loteIndividualId   Int?
+  productoId         Int?
+  
+  tipo               String   // "MINIMO_KG", "PORCENTAJE", etc.
+  valor              Float    // ejemplo: 5 kg, 20%, etc.
+  
+  activa             Boolean  @default(true)
+  fechaCreada        DateTime @default(now())
+
+  lote               Lote?           @relation(fields: [loteId], references: [id])
+  categoriaLote      CategoriaLote?  @relation(fields: [categoriaLoteId], references: [id])
+  subparteLote       SubparteLote?   @relation(fields: [subparteLoteId], references: [id])
+  loteIndividual     LoteIndividual? @relation(fields: [loteIndividualId], references: [idLote])
+  producto           ProductoBase?   @relation(fields: [productoId], references: [id])
+}
+
+model RegistroMerma {
+  id                     Int      @id @default(autoincrement())
+  idLote                 Int      @unique
+  
+  // Pesos totales
+  pesoTotalLoteKg        Float    // Peso total del lote
+  pesoTotalCategoriasKg  Float    // Suma de todas las categorías
+  pesoTotalSubpartesKg   Float    // Suma de todas las subpartes
+  
+  // Porcentajes de merma
+  porcentajeMermaLote      Float  // % merma entre peso inicial y total categorías
+  porcentajeMermaCategoria Float  // % merma entre total categorías y total subpartes
+  porcentajeMermaSubparte  Float  // % merma acumulada total
+  
+  fechaRegistro          DateTime @default(now())
+  
+  lote                   Lote     @relation(fields: [idLote], references: [id])
+}
 
 
 
