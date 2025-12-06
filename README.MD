@@ -170,6 +170,19 @@ npm run start:dev
 - `PATCH /providers/:id` - Actualizar proveedor
 - `DELETE /providers/:id` - Eliminar proveedor
 
+### Alertas (`/alertas`)
+
+- `GET /alertas` - Listar todas las alertas
+- `GET /alertas?noLeidas=true` - Filtrar solo alertas no leídas
+- `GET /alertas?tipo=stock_bajo` - Filtrar por tipo de alerta
+- `GET /alertas/:id` - Obtener alerta por ID
+- `POST /alertas` - Crear nueva alerta
+- `PATCH /alertas/:id` - Actualizar alerta
+- `PATCH /alertas/:id/marcar-leida` - Marcar alerta como leída
+- `PATCH /alertas/marcar-todas-leidas` - Marcar todas las alertas como leídas
+- `DELETE /alertas/:id` - Eliminar alerta
+- `DELETE /alertas` - Eliminar todas las alertas
+
 **Documentación completa:** `http://localhost:3000/api/docs`
 
 ## 🛠️ Comandos Útiles

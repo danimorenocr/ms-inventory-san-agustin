@@ -3,12 +3,11 @@ import { PrismaClient } from "@prisma/client";
 const prisma = new PrismaClient();
 
 async function main() {
+  console.log("🌱 Iniciando seed de categorías, subpartes y datos de prueba...");
 
-  console.log("🌱 Iniciando seed de categorías y subpartes...");
-
-  // ==========================================
-  // 1. Categorías Base (Res)
-  // ==========================================
+  // ============================================================
+  // 1. Categorías Base
+  // ============================================================
   const categoriasBase = [
     { id: 1, tipoAnimal: "res", nombre: "COGOTE" },
     { id: 2, tipoAnimal: "res", nombre: "BRAZOS" },
@@ -25,14 +24,10 @@ async function main() {
 
   console.log("✔ Categorías base insertadas.");
 
-  // ==========================================
-  // 2. Subpartes Base
-  // ==========================================
-
+  // ============================================================
+  // 2. Subpartes Base (completo)
+  // ============================================================
   const subpartesBase = [
-    // ===========================
-    // COGOTE (idCategoriaBase = 1)
-    // ===========================
     { idCategoriaBase: 1, nombre: "Tapa de cogote" },
     { idCategoriaBase: 1, nombre: "Descargue" },
     { idCategoriaBase: 1, nombre: "Cogote" },
@@ -43,9 +38,6 @@ async function main() {
     { idCategoriaBase: 1, nombre: "Hueso de cogote" },
     { idCategoriaBase: 1, nombre: "Rila" },
 
-    // ===========================
-    // BRAZOS (idCategoriaBase = 2)
-    // ===========================
     { idCategoriaBase: 2, nombre: "Bola de brazo" },
     { idCategoriaBase: 2, nombre: "Despegue de brazo" },
     { idCategoriaBase: 2, nombre: "Murillo" },
@@ -53,9 +45,6 @@ async function main() {
     { idCategoriaBase: 2, nombre: "Hueso de paleta" },
     { idCategoriaBase: 2, nombre: "Canillas" },
 
-    // ===========================
-    // PIERNAS (idCategoriaBase = 3)
-    // ===========================
     { idCategoriaBase: 3, nombre: "Centro de pierna" },
     { idCategoriaBase: 3, nombre: "Cadera" },
     { idCategoriaBase: 3, nombre: "Punta de anca" },
@@ -67,25 +56,16 @@ async function main() {
     { idCategoriaBase: 3, nombre: "Cola" },
     { idCategoriaBase: 3, nombre: "Canillas" },
 
-    // ===========================
-    // COSTILLAS (idCategoriaBase = 4)
-    // ===========================
     { idCategoriaBase: 4, nombre: "Falda" },
     { idCategoriaBase: 4, nombre: "Pecho" },
     { idCategoriaBase: 4, nombre: "Sobrebarriga" },
     { idCategoriaBase: 4, nombre: "Costilla" },
     { idCategoriaBase: 4, nombre: "Hueso de pecho" },
 
-    // ===========================
-    // OTROS (idCategoriaBase = 5)
-    // ===========================
     { idCategoriaBase: 5, nombre: "Grasa de canal" },
     { idCategoriaBase: 5, nombre: "Grasa de desposte de canal" },
     { idCategoriaBase: 5, nombre: "Moler corriente" },
 
-    // ===========================
-    // VISCERAS (idCategoriaBase = 6)
-    // ===========================
     { idCategoriaBase: 6, nombre: "Callo solo" },
     { idCategoriaBase: 6, nombre: "Menudo revuelto" },
     { idCategoriaBase: 6, nombre: "Higado" },
@@ -111,6 +91,85 @@ async function main() {
   });
 
   console.log("✔ Subpartes base insertadas.");
+
+  // ============================================================
+  // 3. Insertar proveedor de prueba
+  // ============================================================
+  const proveedor1 = await prisma.proveedor.create({
+    data: {
+      nombre: "Finca El Roble",
+      tipoAnimal: "res",
+      tipoProveedor: "natural",
+      cedulaNit: "123456789",
+      telefono: "3001234567",
+      ciudad: "Bogotá",
+    },
+  });
+
+  // ============================================================
+  // 4. Crear lotes de prueba
+  // ============================================================
+  const loteRes = await prisma.lote.create({
+    data: {
+      tipoAnimal: "res",
+      tipoIngreso: "matadero",
+      proveedorId: proveedor1.id,
+      pesoKgInicial: 350,
+      pesoKgActual: 350,
+      precioTotal: 4200000,
+      idUsuario: 1,
+      fechaIngreso: new Date(),
+    },
+  });
+
+  const loteCerdo = await prisma.lote.create({
+    data: {
+      tipoAnimal: "cerdo",
+      tipoIngreso: "matadero",
+      proveedorId: proveedor1.id,
+      pesoKgInicial: 180,
+      pesoKgActual: 180,
+      precioTotal: 1800000,
+      idUsuario: 1,
+      fechaIngreso: new Date(),
+    },
+  });
+
+  console.log("✔ Proveedores y lotes creados.");
+
+  // ============================================================
+  // 5. CREAR CATEGORÍAS DE LOTE Y SUBPARTES DE PRUEBA
+  // ============================================================
+  
+  // Primero crear categoría de lote
+  const categoriaLoteRes = await prisma.categoriaLote.create({
+    data: {
+      idLote: loteRes.id,
+      idCategoriaBase: 1, // COGOTE
+      pesoCategoriaKg: 40,
+    },
+  });
+
+  // Ahora crear subpartes asociadas a esa categoría
+  await prisma.subparteLote.createMany({
+    data: [
+      {
+        idLote: loteRes.id,
+        idCategoriaLote: categoriaLoteRes.id,
+        idSubparteBase: 1, // Tapa de cogote
+        pesoSubparteKg: 22,
+      },
+      {
+        idLote: loteRes.id,
+        idCategoriaLote: categoriaLoteRes.id,
+        idSubparteBase: 3, // Cogote
+        pesoSubparteKg: 18,
+      },
+    ],
+  });
+
+  console.log("✔ Categorías de lote y subpartes añadidas.");
+
   console.log("🌱 Seed completado con éxito.");
 }
 

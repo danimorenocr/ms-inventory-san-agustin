@@ -145,4 +145,14 @@ model LoteIndividual {
   producto ProductoBase @relation(fields: [idProductoBase], references: [id])
 }
 
+model Alerta {
+  id        Int      @id @default(autoincrement())
+  tipo      String
+  mensaje   String
+  fecha     DateTime @default(now())
+  leida     Boolean  @default(false)
+}
+
+
+
 
