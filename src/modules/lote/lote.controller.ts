@@ -86,6 +86,18 @@ export class LoteController {
     return this.loteService.getTotalCarnePorTipo();
   }
 
+  @Get('reportes/total-por-subparte')
+  @ApiOperation({
+    summary: 'Obtener el total de kg por cada subparte',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Totales agrupados por cada subparte',
+  })
+  getTotalPorSubparte() {
+    return this.loteService.getTotalPorSubparte();
+  }
+
   // ======================================================
   // 📌 OBTENER / ACTUALIZAR / ELIMINAR POR ID
   // ======================================================

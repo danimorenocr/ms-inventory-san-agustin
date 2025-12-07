@@ -138,39 +138,126 @@ async function main() {
   console.log("✔ Proveedores y lotes creados.");
 
   // ============================================================
-  // 5. CREAR CATEGORÍAS DE LOTE Y SUBPARTES DE PRUEBA
+  // 5. CREAR LOTE ADICIONAL PARA PROBAR SUMA DE SUBPARTES
   // ============================================================
-  
-  // Primero crear categoría de lote
-  const categoriaLoteRes = await prisma.categoriaLote.create({
+  const loteRes2 = await prisma.lote.create({
     data: {
-      idLote: loteRes.id,
-      idCategoriaBase: 1, // COGOTE
-      pesoCategoriaKg: 40,
+      tipoAnimal: "res",
+      tipoIngreso: "matadero",
+      proveedorId: proveedor1.id,
+      pesoKgInicial: 400,
+      pesoKgActual: 400,
+      precioTotal: 5000000,
+      idUsuario: 1,
+      fechaIngreso: new Date(),
     },
   });
 
-  // Ahora crear subpartes asociadas a esa categoría
+  const loteRes3 = await prisma.lote.create({
+    data: {
+      tipoAnimal: "res",
+      tipoIngreso: "matadero",
+      proveedorId: proveedor1.id,
+      pesoKgInicial: 380,
+      pesoKgActual: 380,
+      precioTotal: 4500000,
+      idUsuario: 1,
+      fechaIngreso: new Date(),
+    },
+  });
+
+  console.log("✔ Lotes adicionales creados.");
+
+  // ============================================================
+  // 6. CREAR CATEGORÍAS DE LOTE Y SUBPARTES DE PRUEBA
+  // ============================================================
+  
+  // Categoría Cogote - Lote 1
+  const categoriaLoteRes1Cogote = await prisma.categoriaLote.create({
+    data: {
+      idLote: loteRes.id,
+      idCategoriaBase: 1, // COGOTE
+      pesoCategoriaKg: 50,
+    },
+  });
+
+  // Categoría Brazos - Lote 1
+  const categoriaLoteRes1Brazos = await prisma.categoriaLote.create({
+    data: {
+      idLote: loteRes.id,
+      idCategoriaBase: 2, // BRAZOS
+      pesoCategoriaKg: 45,
+    },
+  });
+
+  // Categoría Cogote - Lote 2
+  const categoriaLoteRes2Cogote = await prisma.categoriaLote.create({
+    data: {
+      idLote: loteRes2.id,
+      idCategoriaBase: 1, // COGOTE
+      pesoCategoriaKg: 60,
+    },
+  });
+
+  // Categoría Brazos - Lote 2
+  const categoriaLoteRes2Brazos = await prisma.categoriaLote.create({
+    data: {
+      idLote: loteRes2.id,
+      idCategoriaBase: 2, // BRAZOS
+      pesoCategoriaKg: 55,
+    },
+  });
+
+  // Categoría Cogote - Lote 3
+  const categoriaLoteRes3Cogote = await prisma.categoriaLote.create({
+    data: {
+      idLote: loteRes3.id,
+      idCategoriaBase: 1, // COGOTE
+      pesoCategoriaKg: 45,
+    },
+  });
+
+  console.log("✔ Categorías de lote creadas.");
+
+  // ============================================================
+  // 7. CREAR SUBPARTES CON PESOS DIFERENTES
+  // ============================================================
   await prisma.subparteLote.createMany({
     data: [
-      {
-        idLote: loteRes.id,
-        idCategoriaLote: categoriaLoteRes.id,
-        idSubparteBase: 1, // Tapa de cogote
-        pesoSubparteKg: 22,
-      },
-      {
-        idLote: loteRes.id,
-        idCategoriaLote: categoriaLoteRes.id,
-        idSubparteBase: 3, // Cogote
-        pesoSubparteKg: 18,
-      },
+      // LOTE 1 - Cogote
+      { idLote: loteRes.id, idCategoriaLote: categoriaLoteRes1Cogote.id, idSubparteBase: 1, pesoSubparteKg: 22 }, // Tapa de cogote
+      { idLote: loteRes.id, idCategoriaLote: categoriaLoteRes1Cogote.id, idSubparteBase: 3, pesoSubparteKg: 18 }, // Cogote
+      { idLote: loteRes.id, idCategoriaLote: categoriaLoteRes1Cogote.id, idSubparteBase: 5, pesoSubparteKg: 10 }, // Ojo de bife
+
+      // LOTE 1 - Brazos
+      { idLote: loteRes.id, idCategoriaLote: categoriaLoteRes1Brazos.id, idSubparteBase: 10, pesoSubparteKg: 25 }, // Bola de brazo
+      { idLote: loteRes.id, idCategoriaLote: categoriaLoteRes1Brazos.id, idSubparteBase: 12, pesoSubparteKg: 20 }, // Murillo
+
+      // LOTE 2 - Cogote (mismo tipo de subpartes para sumar)
+      { idLote: loteRes2.id, idCategoriaLote: categoriaLoteRes2Cogote.id, idSubparteBase: 1, pesoSubparteKg: 30 }, // Tapa de cogote
+      { idLote: loteRes2.id, idCategoriaLote: categoriaLoteRes2Cogote.id, idSubparteBase: 3, pesoSubparteKg: 20 }, // Cogote
+      { idLote: loteRes2.id, idCategoriaLote: categoriaLoteRes2Cogote.id, idSubparteBase: 5, pesoSubparteKg: 10 }, // Ojo de bife
+
+      // LOTE 2 - Brazos
+      { idLote: loteRes2.id, idCategoriaLote: categoriaLoteRes2Brazos.id, idSubparteBase: 10, pesoSubparteKg: 30 }, // Bola de brazo
+      { idLote: loteRes2.id, idCategoriaLote: categoriaLoteRes2Brazos.id, idSubparteBase: 12, pesoSubparteKg: 25 }, // Murillo
+
+      // LOTE 3 - Cogote
+      { idLote: loteRes3.id, idCategoriaLote: categoriaLoteRes3Cogote.id, idSubparteBase: 1, pesoSubparteKg: 25 }, // Tapa de cogote
+      { idLote: loteRes3.id, idCategoriaLote: categoriaLoteRes3Cogote.id, idSubparteBase: 3, pesoSubparteKg: 15 }, // Cogote
+      { idLote: loteRes3.id, idCategoriaLote: categoriaLoteRes3Cogote.id, idSubparteBase: 5, pesoSubparteKg: 5 },  // Ojo de bife
     ],
   });
 
-  console.log("✔ Categorías de lote y subpartes añadidas.");
+  console.log("✔ Subpartes con diferentes pesos añadidas.");
+  console.log("\n📊 RESUMEN DE DATOS:");
+  console.log("- Tapa de cogote (id: 1): 22 + 30 + 25 = 77 kg");
+  console.log("- Cogote (id: 3): 18 + 20 + 15 = 53 kg");
+  console.log("- Ojo de bife (id: 5): 10 + 10 + 5 = 25 kg");
+  console.log("- Bola de brazo (id: 10): 25 + 30 = 55 kg");
+  console.log("- Murillo (id: 12): 20 + 25 = 45 kg");
 
-  console.log("🌱 Seed completado con éxito.");
+  console.log("\n🌱 Seed completado con éxito.");
 }
 
 main()

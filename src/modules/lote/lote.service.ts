@@ -155,4 +155,45 @@ export class LoteService {
       },
     };
   }
+
+  // ======================================================
+  // 📌 REPORTE: TOTAL POR CADA SUBPARTE
+  // ======================================================
+  async getTotalPorSubparte() {
+    const subpartes = await this.prisma.subparteLote.groupBy({
+      by: ['idSubparteBase'],
+      _sum: {
+        pesoSubparteKg: true,
+      },
+    });
+
+    const resultado = [];
+
+    for (const subparte of subpartes) {
+      const subparteBase = await this.prisma.subparteBase.findUnique({
+        where: { id: subparte.idSubparteBase },
+        include: {
+          categoria: true,
+        },
+      });
+
+      resultado.push({
+        idSubparteBase: subparte.idSubparteBase,
+        nombreSubparte: subparteBase?.nombre || 'Desconocida',
+        categoria: subparteBase?.categoria.nombre || 'Sin categoría',
+        tipoAnimal: subparteBase?.categoria.tipoAnimal || 'Sin tipo',
+        totalKg: Number(subparte._sum.pesoSubparteKg ?? 0),
+      });
+    }
+
+    // Ordenar por total descendente
+    resultado.sort((a, b) => b.totalKg - a.totalKg);
+
+    const totalGeneral = resultado.reduce((acc, item) => acc + item.totalKg, 0);
+
+    return {
+      subpartes: resultado,
+      totalGeneral: totalGeneral,
+    };
+  }
 }
