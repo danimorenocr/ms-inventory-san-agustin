@@ -16,7 +16,7 @@ async function main() {
     { id: 4, tipoAnimal: "res", nombre: "Costillas" },
     { id: 5, tipoAnimal: "res", nombre: "Otros" },
     { id: 6, tipoAnimal: "res", nombre: "Vísceras" },
-    
+
     // CERDO
     { id: 7, tipoAnimal: "cerdo", nombre: "Pernil" },
     { id: 8, tipoAnimal: "cerdo", nombre: "Lomo" },
@@ -107,21 +107,21 @@ async function main() {
 
   console.log("✔ Subpartes base insertadas.");
 
-    // ============================================================
-    // 2.1. Productos Base (mismos nombres que subpartes)
-    // ============================================================
-    const productosBase = subpartesBase.map((subparte, idx) => ({
-      nombre: subparte.nombre,
-      categoria: undefined,
-      estado: true,
-    }));
+  // ============================================================
+  // 2.1. Productos Base (mismos nombres que subpartes)
+  // ============================================================
+  const productosBase = subpartesBase.map((subparte, idx) => ({
+    nombre: subparte.nombre,
+    categoria: undefined,
+    estado: true,
+  }));
 
-    await prisma.productoBase.createMany({
-      data: productosBase,
-      skipDuplicates: true,
-    });
+  await prisma.productoBase.createMany({
+    data: productosBase,
+    skipDuplicates: true,
+  });
 
-    console.log("✔ Productos base insertados (mismos nombres que subpartes).");
+  console.log("✔ Productos base insertados (mismos nombres que subpartes).");
 
   // ============================================================
   // 3. Insertar proveedor de prueba
@@ -202,7 +202,7 @@ async function main() {
   // ============================================================
   // 6. CREAR CATEGORÍAS DE LOTE Y SUBPARTES DE PRUEBA
   // ============================================================
-  
+
   // Categoría Cogote - Lote 1
   const categoriaLoteRes1Cogote = await prisma.categoriaLote.create({
     data: {

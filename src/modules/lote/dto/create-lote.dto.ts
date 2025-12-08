@@ -13,16 +13,16 @@ import { ApiProperty } from '@nestjs/swagger';
 export class CreateLoteDto {
   @ApiProperty({
     description: 'Tipo de ingreso del lote',
-    enum: ['matadero', 'compra_individual'],
-    example: 'matadero',
+    enum: ['Planta de beneficio', 'compra_individual'],
+    example: 'Planta de beneficio',
   })
   @IsString()
   @IsNotEmpty()
-  @IsIn(['matadero', 'compra_individual'])
+  @IsIn(['Planta de beneficio', 'compra_individual'])
   tipoIngreso: string;
 
   @ApiProperty({
-    description: 'Tipo de animal',
+    description: 'Categoria animal',
     enum: ['res', 'cerdo', 'pollo', 'pescado', 'producto_individual'],
     example: 'res',
   })

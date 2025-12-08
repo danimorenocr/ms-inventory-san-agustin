@@ -35,6 +35,15 @@ export class CreateSubparteLoteDto {
   pesoSubparteKg: number;
 
   @ApiProperty({
+    description: 'Unidades',
+    example: 2,
+    required: false,
+  })
+  @IsNumber()
+  @IsOptional()
+  unidad?: number;
+
+  @ApiProperty({
     description: 'Fecha de pesado',
     example: '2025-12-02T10:00:00Z',
     required: false,

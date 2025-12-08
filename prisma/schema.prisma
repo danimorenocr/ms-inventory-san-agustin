@@ -139,7 +139,7 @@ model SubparteLote {
   idCategoriaLote Int
   idSubparteBase  Int
   pesoSubparteKg  Float
-  unidad          String?  // Nueva columna: unidad de medida (kg, g, unidad, etc.)
+  unidades          Int?
   fechaPesado     DateTime @default(now())
 
   lote          Lote          @relation(fields: [idLote], references: [id])
@@ -162,7 +162,7 @@ model LoteIndividual {
   pesoKg         Float
   precioKg       Float
   precioTotal    Float
-  unidad         String?  // Nueva columna: unidad de medida (kg, g, unidad, etc.)
+  unidades       Int?
   fechaRegistro  DateTime @default(now())
 
   lote          Lote         @relation(fields: [idLote], references: [id])

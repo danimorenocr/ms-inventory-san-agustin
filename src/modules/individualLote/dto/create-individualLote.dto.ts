@@ -50,4 +50,13 @@ export class CreateLoteIndividualDto {
   @IsDateString()
   @IsOptional()
   fechaRegistro?: string;
+
+  @ApiProperty({
+    description: 'Unidades',
+    example: 2,
+    required: false,
+  })
+  @IsNumber()
+  @IsOptional()
+  unidades?: number;
 }
