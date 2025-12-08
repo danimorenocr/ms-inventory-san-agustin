@@ -9,6 +9,7 @@ import { SubparteLoteModule } from './modules/subpartsLote/subpartsLote.module';
 import { LoteIndividualModule } from './modules/individualLote/individualLote.module';
 import { ProviderModule } from './modules/providers/provider.module';
 import { AlertModule } from './modules/alerts/alert.module';
+import { ProvenanceModule } from './modules/provenance/provenance.module';
 
 @Module({
   imports: [
@@ -22,6 +23,7 @@ import { AlertModule } from './modules/alerts/alert.module';
     LoteIndividualModule,
     ProviderModule,
     AlertModule,
+    ProvenanceModule,
   ],
   controllers: [],
   providers: [],
