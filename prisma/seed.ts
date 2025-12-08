@@ -143,7 +143,7 @@ async function main() {
   const loteRes = await prisma.lote.create({
     data: {
       tipoAnimal: "res",
-      tipoIngreso: "matadero",
+      tipoIngreso: "Planta de beneficio",
       proveedorId: proveedor1.id,
       pesoKgInicial: 350,
       pesoKgActual: 350,
@@ -156,7 +156,7 @@ async function main() {
   const loteCerdo = await prisma.lote.create({
     data: {
       tipoAnimal: "cerdo",
-      tipoIngreso: "matadero",
+      tipoIngreso: "Planta de beneficio",
       proveedorId: proveedor1.id,
       pesoKgInicial: 180,
       pesoKgActual: 180,
@@ -174,7 +174,7 @@ async function main() {
   const loteRes2 = await prisma.lote.create({
     data: {
       tipoAnimal: "res",
-      tipoIngreso: "matadero",
+      tipoIngreso: "Planta de beneficio",
       proveedorId: proveedor1.id,
       pesoKgInicial: 400,
       pesoKgActual: 400,
@@ -187,7 +187,7 @@ async function main() {
   const loteRes3 = await prisma.lote.create({
     data: {
       tipoAnimal: "res",
-      tipoIngreso: "matadero",
+      tipoIngreso: "Planta de beneficio",
       proveedorId: proveedor1.id,
       pesoKgInicial: 380,
       pesoKgActual: 380,

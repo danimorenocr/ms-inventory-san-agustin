@@ -5,11 +5,33 @@ import { UpdateLoteDto } from '../dto/update-lote.dto';
 
 @Injectable()
 export class LoteRepository {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService) { }
 
   async create(createLoteDto: CreateLoteDto) {
+    const { procedencia, ...loteData } = createLoteDto;
+
+    let procedenciaId: number | null = null;
+
+    if (procedencia) {
+      const existingProcedencia = await this.prisma.procedencia.findFirst({
+        where: { nombre: procedencia },
+      });
+
+      if (existingProcedencia) {
+        procedenciaId = existingProcedencia.id;
+      } else {
+        const newProcedencia = await this.prisma.procedencia.create({
+          data: { nombre: procedencia },
+        });
+        procedenciaId = newProcedencia.id;
+      }
+    }
+
     return this.prisma.lote.create({
-      data: createLoteDto,
+      data: {
+        ...loteData,
+        ...(procedenciaId && { procedenciaId }),
+      },
     });
   }
 
@@ -151,9 +173,31 @@ export class LoteRepository {
   }
 
   async update(id: number, updateLoteDto: UpdateLoteDto) {
+    const { procedencia, ...loteData } = updateLoteDto;
+
+    let procedenciaId: number | null = null;
+
+    if (procedencia) {
+      const existingProcedencia = await this.prisma.procedencia.findFirst({
+        where: { nombre: procedencia },
+      });
+
+      if (existingProcedencia) {
+        procedenciaId = existingProcedencia.id;
+      } else {
+        const newProcedencia = await this.prisma.procedencia.create({
+          data: { nombre: procedencia },
+        });
+        procedenciaId = newProcedencia.id;
+      }
+    }
+
     return this.prisma.lote.update({
       where: { id },
-      data: updateLoteDto,
+      data: {
+        ...loteData,
+        ...(procedenciaId && { procedenciaId }),
+      },
     });
   }
 

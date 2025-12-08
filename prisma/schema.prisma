@@ -86,17 +86,6 @@ model Lote {
   procedencia   Procedencia? @relation(fields: [procedenciaId], references: [id])
   guia          Boolean?
   fotoGuia      String?
-  pesoKgInicial Float
-  pesoKgActual  Float
-  precioKg      Float?
-  precioArroba  Float?
-  precioTotal   Float
-  limpio        Boolean?
-  sexo          String?
-  clasificacion String?
-  dientes       Int?
-  despostado    Boolean  @default(false)
-  fechaIngreso  DateTime @default(now())
   pesoKgInicial     Float
   pesoKgActual      Float
   pesoKgLimpio      Float?   // Nuevo campo: peso limpio en kg
@@ -108,6 +97,7 @@ model Lote {
   sexo              String?
   clasificacion     String?
   dientes           Int?
+  despostado        Boolean  @default(false)
   fechaIngreso      DateTime @default(now())
   idUsuario     Int
 
