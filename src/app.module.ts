@@ -9,6 +9,8 @@ import { SubparteLoteModule } from './modules/subpartsLote/subpartsLote.module';
 import { LoteIndividualModule } from './modules/individualLote/individualLote.module';
 import { ProviderModule } from './modules/providers/provider.module';
 import { AlertModule } from './modules/alerts/alert.module';
+import { AlertaReglaModule } from './modules/alertaRegla/alerta-regla.module';
+import { RegistroMermaModule } from './modules/registroMerma/registro-merma.module';
 
 @Module({
   imports: [
@@ -22,6 +24,8 @@ import { AlertModule } from './modules/alerts/alert.module';
     LoteIndividualModule,
     ProviderModule,
     AlertModule,
+    AlertaReglaModule,
+    RegistroMermaModule,
   ],
   controllers: [],
   providers: [],

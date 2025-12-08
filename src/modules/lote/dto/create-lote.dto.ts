@@ -147,6 +147,16 @@ export class CreateLoteDto {
   dientes?: number;
 
   @ApiProperty({
+    description: 'Indica si el lote ha sido despostado',
+    example: false,
+    default: false,
+    required: false,
+  })
+  @IsBoolean()
+  @IsOptional()
+  despostado?: boolean;
+
+  @ApiProperty({
     description: 'Fecha de ingreso del lote',
     example: '2025-12-02T10:00:00Z',
     required: false,

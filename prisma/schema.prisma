@@ -84,6 +84,7 @@ model Lote {
   sexo          String?
   clasificacion String?
   dientes       Int?
+  despostado    Boolean  @default(false)
   fechaIngreso  DateTime @default(now())
   idUsuario     Int
 

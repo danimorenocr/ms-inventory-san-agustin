@@ -9,12 +9,27 @@ async function main() {
   // 1. Categorías Base
   // ============================================================
   const categoriasBase = [
+    // RES
     { id: 1, tipoAnimal: "res", nombre: "Cogote" },
     { id: 2, tipoAnimal: "res", nombre: "Brazos" },
     { id: 3, tipoAnimal: "res", nombre: "Piernas" },
     { id: 4, tipoAnimal: "res", nombre: "Costillas" },
     { id: 5, tipoAnimal: "res", nombre: "Otros" },
     { id: 6, tipoAnimal: "res", nombre: "Vísceras" },
+    
+    // CERDO
+    { id: 7, tipoAnimal: "cerdo", nombre: "Pernil" },
+    { id: 8, tipoAnimal: "cerdo", nombre: "Lomo" },
+    { id: 9, tipoAnimal: "cerdo", nombre: "Costilla" },
+    { id: 10, tipoAnimal: "cerdo", nombre: "Espinazo" },
+    { id: 11, tipoAnimal: "cerdo", nombre: "Panceta" },
+    { id: 12, tipoAnimal: "cerdo", nombre: "Moler/Longaniza" },
+    { id: 13, tipoAnimal: "cerdo", nombre: "Tocino" },
+    { id: 14, tipoAnimal: "cerdo", nombre: "Cabeza" },
+    { id: 15, tipoAnimal: "cerdo", nombre: "Hueso" },
+    { id: 16, tipoAnimal: "cerdo", nombre: "Brazo" },
+    { id: 17, tipoAnimal: "cerdo", nombre: "Pezuñas" },
+    { id: 18, tipoAnimal: "cerdo", nombre: "Bondiola" },
   ];
 
   await prisma.categoriaBase.createMany({
@@ -62,8 +77,8 @@ async function main() {
     { idCategoriaBase: 4, nombre: "Costilla" },
     { idCategoriaBase: 4, nombre: "Hueso de pecho" },
 
-    { idCategoriaBase: 5, nombre: "Grasa de canal" },
-    { idCategoriaBase: 5, nombre: "Grasa de desposte de canal" },
+    { idCategoriaBase: 5, nombre: "Grasa de cortes primarios" },
+    { idCategoriaBase: 5, nombre: "Grasa de cortes secundarios" },
     { idCategoriaBase: 5, nombre: "Moler corriente" },
 
     { idCategoriaBase: 6, nombre: "Callo solo" },
@@ -91,6 +106,22 @@ async function main() {
   });
 
   console.log("✔ Subpartes base insertadas.");
+
+    // ============================================================
+    // 2.1. Productos Base (mismos nombres que subpartes)
+    // ============================================================
+    const productosBase = subpartesBase.map((subparte, idx) => ({
+      nombre: subparte.nombre,
+      categoria: undefined,
+      estado: true,
+    }));
+
+    await prisma.productoBase.createMany({
+      data: productosBase,
+      skipDuplicates: true,
+    });
+
+    console.log("✔ Productos base insertados (mismos nombres que subpartes).");
 
   // ============================================================
   // 3. Insertar proveedor de prueba
