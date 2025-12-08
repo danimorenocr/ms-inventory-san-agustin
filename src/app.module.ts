@@ -11,6 +11,7 @@ import { ProviderModule } from './modules/providers/provider.module';
 import { AlertModule } from './modules/alerts/alert.module';
 import { AlertaReglaModule } from './modules/alertaRegla/alerta-regla.module';
 import { RegistroMermaModule } from './modules/registroMerma/registro-merma.module';
+import { ProvenanceModule } from './modules/provenance/provenance.module';
 
 @Module({
   imports: [
@@ -26,6 +27,7 @@ import { RegistroMermaModule } from './modules/registroMerma/registro-merma.modu
     AlertModule,
     AlertaReglaModule,
     RegistroMermaModule,
+    ProvenanceModule,
   ],
   controllers: [],
   providers: [],

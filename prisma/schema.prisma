@@ -1,3 +1,13 @@
+// ================================
+// PROCEDENCIA
+// ================================
+model Procedencia {
+  id     Int    @id @default(autoincrement())
+  nombre String
+
+  lotes           Lote[]
+  lotesIndividual LoteIndividual[]
+}
 generator client {
   provider = "prisma-client-js"
 }
@@ -72,7 +82,8 @@ model Lote {
   id            Int      @id @default(autoincrement())
   tipoIngreso   String
   tipoAnimal    String
-  procedencia   String?
+  procedenciaId Int?
+  procedencia   Procedencia? @relation(fields: [procedenciaId], references: [id])
   guia          Boolean?
   fotoGuia      String?
   pesoKgInicial Float
@@ -86,6 +97,18 @@ model Lote {
   dientes       Int?
   despostado    Boolean  @default(false)
   fechaIngreso  DateTime @default(now())
+  pesoKgInicial     Float
+  pesoKgActual      Float
+  pesoKgLimpio      Float?   // Nuevo campo: peso limpio en kg
+  pesoArrobaLimpio  Float?   // Nuevo campo: peso limpio en arrobas
+  precioKg          Float?
+  precioArroba      Float?
+  precioTotal       Float
+  limpio            Boolean?
+  sexo              String?
+  clasificacion     String?
+  dientes           Int?
+  fechaIngreso      DateTime @default(now())
   idUsuario     Int
 
   // 🔗 RELACIÓN CON PROVEEDOR
@@ -126,6 +149,7 @@ model SubparteLote {
   idCategoriaLote Int
   idSubparteBase  Int
   pesoSubparteKg  Float
+  unidad          String?  // Nueva columna: unidad de medida (kg, g, unidad, etc.)
   fechaPesado     DateTime @default(now())
 
   lote          Lote          @relation(fields: [idLote], references: [id])
@@ -141,11 +165,14 @@ model SubparteLote {
 // ================================
 
 model LoteIndividual {
+    procedenciaId Int?
+    procedencia   Procedencia? @relation(fields: [procedenciaId], references: [id])
   idLote         Int      @id
   idProductoBase Int
   pesoKg         Float
   precioKg       Float
   precioTotal    Float
+  unidad         String?  // Nueva columna: unidad de medida (kg, g, unidad, etc.)
   fechaRegistro  DateTime @default(now())
 
   lote          Lote         @relation(fields: [idLote], references: [id])
