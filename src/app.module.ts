@@ -12,7 +12,7 @@ import { AlertModule } from './modules/alerts/alert.module';
 import { AlertaReglaModule } from './modules/alertaRegla/alerta-regla.module';
 import { RegistroMermaModule } from './modules/registroMerma/registro-merma.module';
 import { ProvenanceModule } from './modules/provenance/provenance.module';
-
+import { HealthController } from './health.controller';
 @Module({
   imports: [
     PrismaModule,
@@ -27,9 +27,10 @@ import { ProvenanceModule } from './modules/provenance/provenance.module';
     AlertModule,
     AlertaReglaModule,
     RegistroMermaModule,
-    ProvenanceModule,
+    ProvenanceModule
+    
   ],
-  controllers: [],
+  controllers: [HealthController],
   providers: [],
 })
 export class AppModule {}
