@@ -41,7 +41,7 @@ export class CreateSubparteLoteDto {
   })
   @IsNumber()
   @IsOptional()
-  unidad?: number;
+  unidades?: number;
 
   @ApiProperty({
     description: 'Fecha de pesado',

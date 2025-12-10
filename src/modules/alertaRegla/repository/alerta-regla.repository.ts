@@ -8,6 +8,7 @@ export class AlertaReglaRepository {
   constructor(private readonly prisma: PrismaService) {}
 
   async create(dto: CreateAlertaReglaDto) {
+    console.log("DTO recibido:", dto);
     return this.prisma.alertaRegla.create({
       data: dto,
       include: {

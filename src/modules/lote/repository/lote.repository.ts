@@ -8,30 +8,8 @@ export class LoteRepository {
   constructor(private readonly prisma: PrismaService) { }
 
   async create(createLoteDto: CreateLoteDto) {
-    const { procedencia, ...loteData } = createLoteDto;
-
-    let procedenciaId: number | null = null;
-
-    if (procedencia) {
-      const existingProcedencia = await this.prisma.procedencia.findFirst({
-        where: { nombre: procedencia },
-      });
-
-      if (existingProcedencia) {
-        procedenciaId = existingProcedencia.id;
-      } else {
-        const newProcedencia = await this.prisma.procedencia.create({
-          data: { nombre: procedencia },
-        });
-        procedenciaId = newProcedencia.id;
-      }
-    }
-
     return this.prisma.lote.create({
-      data: {
-        ...loteData,
-        ...(procedenciaId && { procedenciaId }),
-      },
+      data: createLoteDto,
     });
   }
 
@@ -173,33 +151,28 @@ export class LoteRepository {
   }
 
   async update(id: number, updateLoteDto: UpdateLoteDto) {
-    const { procedencia, ...loteData } = updateLoteDto;
-
-    let procedenciaId: number | null = null;
-
-    if (procedencia) {
-      const existingProcedencia = await this.prisma.procedencia.findFirst({
-        where: { nombre: procedencia },
+    // Validar procedencia si viene en el DTO
+    if (updateLoteDto.procedenciaId) {
+      const exists = await this.prisma.procedencia.findUnique({
+        where: { id: updateLoteDto.procedenciaId },
       });
 
-      if (existingProcedencia) {
-        procedenciaId = existingProcedencia.id;
-      } else {
-        const newProcedencia = await this.prisma.procedencia.create({
-          data: { nombre: procedencia },
-        });
-        procedenciaId = newProcedencia.id;
+      if (!exists) {
+        throw new Error(`La procedencia con id ${updateLoteDto.procedenciaId} no existe`);
       }
     }
 
+    // Actualizar lote
     return this.prisma.lote.update({
       where: { id },
       data: {
-        ...loteData,
-        ...(procedenciaId && { procedenciaId }),
+        ...updateLoteDto,
+        ...(updateLoteDto.procedenciaId ? { procedenciaId: updateLoteDto.procedenciaId } : {}),
       },
     });
   }
+
+
 
   async remove(id: number) {
     return this.prisma.lote.delete({

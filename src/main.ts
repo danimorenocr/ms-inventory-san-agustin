@@ -35,7 +35,19 @@ async function bootstrap() {
     .build();
 
   const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('api/docs', app, document);
+ 
+  
+  // Ruta JSON de Swagger (para descargar)
+  app.use('/api/docs-json', (req, res) => {
+    res.json(document);
+  });
+
+  // Setup UI de Swagger + enlace al JSON
+  SwaggerModule.setup('api/docs', app, document, {
+    swaggerOptions: {
+      url: '/api/docs-json',  // permite descargar el JSON desde Swagger UI
+    },
+  });
 
   const port = process.env.PORT || 4001;
   await app.listen(port);

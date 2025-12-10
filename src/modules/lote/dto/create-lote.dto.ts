@@ -32,13 +32,14 @@ export class CreateLoteDto {
   tipoAnimal: string;
 
   @ApiProperty({
-    description: 'Procedencia del lote',
-    example: 'Finca El Paraíso',
+    description: 'ID de la procedencia (opcional si se envía procedencia)',
+    example: 1,
     required: false,
   })
-  @IsString()
+  @IsInt()
   @IsOptional()
-  procedencia?: string;
+  procedenciaId?: number;
+
 
   @ApiProperty({
     description: 'ID del proveedor',
