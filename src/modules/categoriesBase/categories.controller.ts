@@ -8,6 +8,8 @@ import {
   Delete,
   ParseIntPipe,
   Query,
+  UsePipes,
+  ValidationPipe,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiQuery } from '@nestjs/swagger';
 import { CategoriesBaseService } from './categories.service';
@@ -23,6 +25,7 @@ export class CategoriesBaseController {
   @ApiOperation({ summary: 'Crear una nueva categoría base' })
   @ApiResponse({ status: 201, description: 'Categoría creada exitosamente' })
   @ApiResponse({ status: 400, description: 'Datos inválidos' })
+  @UsePipes(new ValidationPipe({ whitelist: true }))
   create(@Body() createCategoryDto: CreateCategoryBaseDto) {
     return this.categoriesService.create(createCategoryDto);
   }

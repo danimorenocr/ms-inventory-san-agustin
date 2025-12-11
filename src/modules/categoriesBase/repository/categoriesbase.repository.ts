@@ -8,6 +8,7 @@ export class CategoriesBaseRepository {
   constructor(private readonly prisma: PrismaService) {}
 
   async create(createCategoryDto: CreateCategoryBaseDto) {
+    console.log('DTO recibido:', createCategoryDto);
     return this.prisma.categoriaBase.create({
       data: createCategoryDto,
     });
