@@ -9,13 +9,29 @@ export class LoteService {
   constructor(
     private readonly repository: LoteRepository,
     private readonly prisma: PrismaService,
-  ) {}
+  ) { }
 
   // ======================================================
   // 📌 CREAR LOTE + CREAR CATEGORIAS Y SUBPARTES AUTOMATICAMENTE
   // ======================================================
-  async create(createLoteDto: CreateLoteDto) {
-    const lote = await this.repository.create(createLoteDto);
+  async create(createLoteDto: CreateLoteDto, user: any) {
+    // Validar que el usuario existe y tiene ID
+    if (!user || !user.sub) {
+      throw new Error('Usuario no autenticado o sin ID');
+    }
+
+    console.log("👤 Usuario autenticado:", user);
+    console.log("📦 DTO recibido:", createLoteDto);
+
+    // Crear lote con ID del usuario autenticado (user.sub contiene el ID)
+    const loteData = {
+      ...createLoteDto,
+      idUsuario: user.sub,
+    };
+
+    console.log("💾 Datos a guardar en BD:", loteData);
+
+    const lote = await this.repository.create(loteData as CreateLoteDto);
 
     const categoriasBase = await this.prisma.categoriaBase.findMany({
       where: {
@@ -48,6 +64,7 @@ export class LoteService {
 
     return this.findOne(lote.id);
   }
+
 
   findAll() {
     return this.repository.findAll();

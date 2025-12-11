@@ -167,10 +167,11 @@ export class CreateLoteDto {
   fechaIngreso?: string;
 
   @ApiProperty({
-    description: 'ID del usuario que registra el lote',
+    description: 'ID del usuario que registra el lote (se obtiene automáticamente del token JWT)',
     example: 1,
+    required: false,
   })
   @IsInt()
-  @IsNotEmpty()
-  idUsuario: number;
+  @IsOptional()
+  idUsuario?: number;
 }

@@ -8,6 +8,7 @@ import {
   Delete,
   ParseIntPipe,
   Query,
+  UseGuards,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -15,8 +16,10 @@ import {
   ApiResponse,
   ApiParam,
   ApiQuery,
+  ApiBearerAuth,
 } from '@nestjs/swagger';
-
+import { AuthGuard } from '../../common/guards/auth.guard';
+import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { LoteService } from './lote.service';
 import { CreateLoteDto } from './dto/create-lote.dto';
 import { UpdateLoteDto } from './dto/update-lote.dto';
@@ -24,17 +27,24 @@ import { UpdateLoteDto } from './dto/update-lote.dto';
 @ApiTags('Lotes')
 @Controller('lotes')
 export class LoteController {
-  constructor(private readonly loteService: LoteService) {}
+  constructor(private readonly loteService: LoteService) { }
 
   // ======================================================
   // 📌 CREAR LOTE
   // ======================================================
+  @UseGuards(AuthGuard)
+  @ApiBearerAuth()
   @Post()
   @ApiOperation({ summary: 'Crear un nuevo lote' })
   @ApiResponse({ status: 201, description: 'Lote creado exitosamente' })
   @ApiResponse({ status: 400, description: 'Datos inválidos' })
-  create(@Body() createLoteDto: CreateLoteDto) {
-    return this.loteService.create(createLoteDto);
+  @ApiResponse({ status: 401, description: 'No autorizado' })
+  create(
+    @Body() createLoteDto: CreateLoteDto,
+    @CurrentUser() user: Express.Request['user'],
+  ) {
+    console.log("Usuario autenticado:", user);
+    return this.loteService.create(createLoteDto, user);
   }
 
   // ======================================================
