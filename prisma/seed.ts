@@ -112,7 +112,7 @@ async function main() {
   // ============================================================
   const productosBase = subpartesBase.map((subparte, idx) => ({
     nombre: subparte.nombre,
-    categoria: undefined,
+    categoria: "res",
     estado: true,
   }));
 
