@@ -1,13 +1,3 @@
-// ================================
-// PROCEDENCIA
-// ================================
-model Procedencia {
-  id     Int    @id @default(autoincrement())
-  nombre String
-
-  lotes           Lote[]
-  lotesIndividual LoteIndividual[]
-}
 generator client {
   provider = "prisma-client-js"
 }
@@ -17,14 +7,13 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// ================================
-// TABLAS BASE (CATÁLOGOS)
-// ================================
+/* ================================
+   CATÁLOGOS BASE
+================================ */
 
-// Categorías generales del animal (brazo, pierna, cogote, etc.)
 model CategoriaBase {
   id         Int     @id @default(autoincrement())
-  tipoAnimal String // res | cerdo | pollo | pescado | individual
+  tipoAnimal String
   nombre     String
   estado     Boolean @default(true)
 
@@ -32,52 +21,71 @@ model CategoriaBase {
   categoriasLote CategoriaLote[]
 }
 
-// Subpartes “maestras” del desposte (murillo, bola, etc.)
 model SubparteBase {
   id              Int     @id @default(autoincrement())
   idCategoriaBase Int
   nombre          String
   estado          Boolean @default(true)
 
-  categoria CategoriaBase @relation(fields: [idCategoriaBase], references: [id])
-
+  categoria     CategoriaBase @relation(fields: [idCategoriaBase], references: [id])
   subpartesLote SubparteLote[]
-}
- 
-// Productos que existen aunque no sean desposte (Ubre, pescado entero, etc.)
-model ProductoBase {
-  id        Int     @id @default(autoincrement())
-  nombre    String
-  categoria String? // vísceras, pescado, pollo, etc.
-  estado    Boolean @default(true)
-
-  lotesIndividuales LoteIndividual[]
-  alertasReglas     AlertaRegla[]
+  productosSalidaComponentes ProductoSalidaComponente[]
 }
 
-// ================================
-// INGRESOS DE INVENTARIO
-// ================================
+/* ================================
+   PRODUCTOS DE SALIDA (VENTA)
+================================ */
 
+model ProductoSalida {
+  id     Int     @id @default(autoincrement())
+  nombre String
+  unidad String  // kg | unidad
+  activo Boolean @default(true)
 
-// Proveedores
+  componentes ProductoSalidaComponente[]
+}
+
+model ProductoSalidaComponente {
+  id               Int @id @default(autoincrement())
+  productoSalidaId Int
+  subparteBaseId   Int
+
+  productoSalida ProductoSalida @relation(fields: [productoSalidaId], references: [id])
+  subparteBase   SubparteBase   @relation(fields: [subparteBaseId], references: [id])
+  @@unique([productoSalidaId, subparteBaseId])
+}
+
+/* ================================
+   INGRESO DE INVENTARIO
+================================ */
+
+model Procedencia {
+  id     Int    @id @default(autoincrement())
+  nombre String
+
+  lotes           Lote[]
+  lotesIndividual LoteIndividual[]
+}
+
 model Proveedor {
   id           Int      @id @default(autoincrement())
   nombre       String
-  tipoAnimal   String   // res | cerdo | pollo | pescado | producto_individual
+  tipoAnimal   String
   telefono     String?
   ciudad       String?
-  tipoProveedor String   // natural | juridica
+  tipoProveedor String
   direccion    String?
   cedulaNit    String
   correo       String?
   observacion  String?
 
-  lotes        Lote[]   // Relación 1 - N
+  lotes Lote[]
 }
 
+/* ================================
+   LOTE PRINCIPAL
+================================ */
 
-// Lote principal: res, cerdo o compra individual
 model Lote {
   id            Int      @id @default(autoincrement())
   tipoIngreso   String
@@ -101,22 +109,20 @@ model Lote {
   fechaIngreso      DateTime @default(now())
   idUsuario     Int
 
-  // 🔗 RELACIÓN CON PROVEEDOR
-  proveedorId   Int
-  proveedor     Proveedor @relation(fields: [proveedorId], references: [id])
+  proveedorId Int
+  proveedor   Proveedor @relation(fields: [proveedorId], references: [id])
 
   categoriasLote CategoriaLote[]
   subpartesLote  SubparteLote[]
   loteIndividual LoteIndividual?
-  alertasReglas  AlertaRegla[]
+
+  alertasReglas AlertaRegla[]
 }
 
+/* ================================
+   DESPOSTE
+================================ */
 
-// ================================
-// DESPOSTE POR LOTE
-// ================================
-
-// Categorías del desposte asociadas a un lote (ej: brazo, pierna)
 model CategoriaLote {
   id              Int      @id @default(autoincrement())
   idLote          Int
@@ -127,36 +133,42 @@ model CategoriaLote {
   lote          Lote          @relation(fields: [idLote], references: [id])
   categoriaBase CategoriaBase @relation(fields: [idCategoriaBase], references: [id])
 
-  subpartes     SubparteLote[]
+  subpartes SubparteLote[]
   alertasReglas AlertaRegla[]
 }
 
-// Subpartes asociadas a una categoría del desposte (ej: murillo, bola)
 model SubparteLote {
   id              Int      @id @default(autoincrement())
   idLote          Int
   idCategoriaLote Int
   idSubparteBase  Int
   pesoSubparteKg  Float
-  unidades          Int?
   fechaPesado     DateTime @default(now())
 
   lote          Lote          @relation(fields: [idLote], references: [id])
   categoriaLote CategoriaLote @relation(fields: [idCategoriaLote], references: [id])
   subparteBase  SubparteBase  @relation(fields: [idSubparteBase], references: [id])
 
+  movimientos MovimientoInventario[]
   alertasReglas AlertaRegla[]
 }
 
-// ================================
-// COMPRAS INDIVIDUALES
-// (ej: ubre, bofe, pescado entero, etc.)
-// ================================
+/* ================================
+   COMPRAS INDIVIDUALES
+================================ */
+
+model ProductoBase {
+  id        Int     @id @default(autoincrement())
+  nombre    String
+  categoria String?
+  estado    Boolean @default(true)
+
+  lotesIndividuales LoteIndividual[]
+  alertasReglas     AlertaRegla[]
+}
 
 model LoteIndividual {
-    procedenciaId Int?
-    procedencia   Procedencia? @relation(fields: [procedenciaId], references: [id])
-  idLote         Int      @id
+  idLote         Int @id
   idProductoBase Int
   pesoKg         Float
   precioKg       Float
@@ -164,15 +176,37 @@ model LoteIndividual {
   unidades       Int?
   fechaRegistro  DateTime @default(now())
 
-  lote          Lote         @relation(fields: [idLote], references: [id])
-  producto      ProductoBase @relation(fields: [idProductoBase], references: [id])
+  procedenciaId Int?
+  procedencia   Procedencia? @relation(fields: [procedenciaId], references: [id])
 
+  lote     Lote         @relation(fields: [idLote], references: [id])
+  producto ProductoBase @relation(fields: [idProductoBase], references: [id])
   alertasReglas AlertaRegla[]
 }
 
+/* ================================
+   MOVIMIENTOS (SALIDAS)
+================================ */
+
+model MovimientoInventario {
+  id             Int      @id @default(autoincrement())
+  tipo           String   // VENTA | MERMA | AJUSTE
+  referenciaId   Int?
+  subparteLoteId Int
+  subparteBaseId Int
+  peso           Float
+  fecha          DateTime @default(now())
+
+  subparteLote SubparteLote @relation(fields: [subparteLoteId], references: [id])
+}
+
+/* ================================
+   ALERTAS
+================================ */
+
 model Alerta {
   id        Int      @id @default(autoincrement())
-  tipo      String
+  tipo      String   // INFO | WARNING | CRITICO
   mensaje   String
   fecha     DateTime @default(now())
   leida     Boolean  @default(false)
@@ -187,7 +221,7 @@ model AlertaRegla {
   loteIndividualId   Int?
   productoId         Int?
 
-  tipo               String   // MINIMO_KG, PORCENTAJE, etc.
+  tipo               String   // MINIMO_KG | PORCENTAJE | etc.
   valor              Float
 
   activa             Boolean  @default(true)
@@ -196,10 +230,6 @@ model AlertaRegla {
   lote               Lote?            @relation(fields: [loteId], references: [id])
   categoriaLote      CategoriaLote?   @relation(fields: [categoriaLoteId], references: [id])
   subparteLote       SubparteLote?    @relation(fields: [subparteLoteId], references: [id])
-  loteIndividual     LoteIndividual?  @relation(fields: [loteIndividualId], references: [idLote])  // ← CORRECTO
+  loteIndividual     LoteIndividual?  @relation(fields: [loteIndividualId], references: [idLote])
   producto           ProductoBase?    @relation(fields: [productoId], references: [id])
 }
-
-
-
-
