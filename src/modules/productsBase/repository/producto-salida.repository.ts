@@ -5,7 +5,7 @@ import { UpdateProductoSalidaDto } from '../dto/update-producto-salida.dto';
 
 @Injectable()
 export class ProductoSalidaRepository {
-  constructor(private prisma: PrismaService) {}
+  constructor(private prisma: PrismaService) { }
 
   async create(createProductoSalidaDto: CreateProductoSalidaDto) {
     return this.prisma.productoSalida.create({
@@ -18,11 +18,22 @@ export class ProductoSalidaRepository {
 
   async findAll(skip?: number, take?: number) {
     return this.prisma.productoSalida.findMany({
+      where: {
+        activo: true,
+      },
       include: {
-        componentes: true,
+        componentes: {
+          include: {
+            subparteBase: {
+              include: {
+                categoria: true,
+              },
+            },
+          },
+        },
       },
       skip: skip || 0,
-      take: take || 10,
+      take: take || 100,
     });
   }
 
@@ -30,7 +41,15 @@ export class ProductoSalidaRepository {
     return this.prisma.productoSalida.findUnique({
       where: { id },
       include: {
-        componentes: true,
+        componentes: {
+          include: {
+            subparteBase: {
+              include: {
+                categoria: true,
+              },
+            },
+          },
+        },
       },
     });
   }
