@@ -16,6 +16,7 @@ import { RegistroMermaModule } from './modules/registroMerma/registro-merma.modu
 import { MovimientoInventarioModule } from './modules/registroMerma/movimiento-inventario.module';
 import { ProvenanceModule } from './modules/provenance/provenance.module';
 import { HealthController } from './health.controller';
+import { InventoryModule } from './modules/inventory/inventory.module';
 
 @Module({
   imports: [
@@ -35,9 +36,10 @@ import { HealthController } from './health.controller';
     RegistroMermaModule,
     MovimientoInventarioModule,
     ProvenanceModule,
+    InventoryModule,
   ],
   controllers: [HealthController],
   providers: [],
 })
-export class AppModule {}
+export class AppModule { }
 
