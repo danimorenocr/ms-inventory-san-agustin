@@ -42,7 +42,10 @@ model ProductoSalida {
   unidad String  // kg | unidad
   activo Boolean @default(true)
 
-  componentes ProductoSalidaComponente[]
+  componentes            ProductoSalidaComponente[]
+  componentesLote        ProductoSalidaComponenteLote[]
+  componentesSubparte    ProductoSalidaComponenteSubparte[]
+  componentesIndividual  ProductoSalidaComponenteIndividual[]
 }
 
 model ProductoSalidaComponente {
@@ -53,6 +56,36 @@ model ProductoSalidaComponente {
   productoSalida ProductoSalida @relation(fields: [productoSalidaId], references: [id])
   subparteBase   SubparteBase   @relation(fields: [subparteBaseId], references: [id])
   @@unique([productoSalidaId, subparteBaseId])
+}
+
+model ProductoSalidaComponenteLote {
+  id               Int @id @default(autoincrement())
+  productoSalidaId Int
+  loteId           Int
+
+  productoSalida ProductoSalida @relation(fields: [productoSalidaId], references: [id])
+  lote           Lote           @relation(fields: [loteId], references: [id])
+  @@unique([productoSalidaId, loteId])
+}
+
+model ProductoSalidaComponenteSubparte {
+  id               Int @id @default(autoincrement())
+  productoSalidaId Int
+  subparteLoteId   Int
+
+  productoSalida ProductoSalida @relation(fields: [productoSalidaId], references: [id])
+  subparteLote   SubparteLote   @relation(fields: [subparteLoteId], references: [id])
+  @@unique([productoSalidaId, subparteLoteId])
+}
+
+model ProductoSalidaComponenteIndividual {
+  id               Int @id @default(autoincrement())
+  productoSalidaId Int
+  loteIndividualId Int
+
+  productoSalida   ProductoSalida @relation(fields: [productoSalidaId], references: [id])
+  loteIndividual   LoteIndividual @relation(fields: [loteIndividualId], references: [idLote])
+  @@unique([productoSalidaId, loteIndividualId])
 }
 
 /* ================================
@@ -115,6 +148,7 @@ model Lote {
   categoriasLote CategoriaLote[]
   subpartesLote  SubparteLote[]
   loteIndividual LoteIndividual?
+  productosSalida ProductoSalidaComponenteLote[]
 
   alertasReglas AlertaRegla[]
 }
@@ -150,6 +184,7 @@ model SubparteLote {
   subparteBase  SubparteBase  @relation(fields: [idSubparteBase], references: [id])
 
   movimientos MovimientoInventario[]
+  productosSalida ProductoSalidaComponenteSubparte[]
   alertasReglas AlertaRegla[]
 }
 
@@ -181,6 +216,7 @@ model LoteIndividual {
 
   lote     Lote         @relation(fields: [idLote], references: [id])
   producto ProductoBase @relation(fields: [idProductoBase], references: [id])
+  productosSalida ProductoSalidaComponenteIndividual[]
   alertasReglas AlertaRegla[]
 }
 

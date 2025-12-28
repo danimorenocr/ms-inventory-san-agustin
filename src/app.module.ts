@@ -3,8 +3,7 @@ import { PrismaModule } from './infraestructure/prisma/prisma.module';
 import { CategoriesBaseModule } from './modules/categoriesBase/categories.module';
 import { SubpartsModule } from './modules/subpartsBase/subparts.module';
 import { ProductsModule } from './modules/productsBase/products.module';
-import { ProductoSalidaModule } from './modules/productsBase/producto-salida.module';
-import { ProductoSalidaComponenteModule } from './modules/productsBase/producto-salida-componente.module';
+import { ProductoSalidaModule } from './modules/productoSalida/producto-salida.module';
 import { LoteModule } from './modules/lote/lote.module';
 import { CategoriaLoteModule } from './modules/categoriesLote/categorielote.module';
 import { SubparteLoteModule } from './modules/subpartsLote/subpartsLote.module';
@@ -25,7 +24,6 @@ import { InventoryModule } from './modules/inventory/inventory.module';
     SubpartsModule,
     ProductsModule,
     ProductoSalidaModule,
-    ProductoSalidaComponenteModule,
     LoteModule,
     CategoriaLoteModule,
     SubparteLoteModule,
@@ -42,4 +40,3 @@ import { InventoryModule } from './modules/inventory/inventory.module';
   providers: [],
 })
 export class AppModule { }
-
