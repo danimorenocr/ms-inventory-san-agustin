@@ -124,7 +124,24 @@ async function main() {
   console.log("✔ Productos base insertados (mismos nombres que subpartes).");
 
   // ============================================================
-  // 3. Insertar proveedor de prueba
+  // 2.5. Procedencias
+  // ============================================================
+  const procedenciasData = [
+    { nombre: "Feria de Ganados" },
+    { nombre: "Subasta Ganadera" },
+    { nombre: "Finca La Esperanza" },
+  ];
+
+  await prisma.procedencia.createMany({
+    data: procedenciasData,
+    skipDuplicates: true,
+  });
+
+  const procedencia1 = await prisma.procedencia.findFirst();
+  console.log("✔ Procedencias insertadas.");
+
+  // ============================================================
+  // 3. Insertar proveedores de prueba
   // ============================================================
   const proveedor1 = await prisma.proveedor.create({
     data: {
@@ -137,6 +154,17 @@ async function main() {
     },
   });
 
+  const proveedor2 = await prisma.proveedor.create({
+    data: {
+      nombre: "Agricola San Pedro",
+      tipoAnimal: "cerdo",
+      tipoProveedor: "juridico",
+      cedulaNit: "900123456-1",
+      telefono: "3109876543",
+      ciudad: "Medellín",
+    },
+  });
+
   // ============================================================
   // 4. Crear lotes de prueba
   // ============================================================
@@ -145,6 +173,7 @@ async function main() {
       tipoAnimal: "res",
       tipoIngreso: "Planta de beneficio",
       proveedorId: proveedor1.id,
+      procedenciaId: procedencia1?.id,
       pesoKgInicial: 350,
       pesoKgActual: 350,
       precioTotal: 4200000,
@@ -281,6 +310,40 @@ async function main() {
   });
 
   console.log("✔ Subpartes con diferentes pesos añadidas.");
+
+  // ============================================================
+  // 8. Lotes Individuales
+  // ============================================================
+
+  // Lote padre para el lote individual
+  const loteIndividualParent = await prisma.lote.create({
+    data: {
+      tipoAnimal: "res",
+      tipoIngreso: "compra-individual",
+      proveedorId: proveedor2.id,
+      procedenciaId: procedencia1?.id,
+      pesoKgInicial: 15,
+      pesoKgActual: 15,
+      precioTotal: 200000,
+      idUsuario: 1,
+      fechaIngreso: new Date(),
+    }
+  });
+
+  // Crear el registro de LoteIndividual
+  // Usamos un ID de producto base existente, ej: 5 (Ojo de bife)
+  await prisma.loteIndividual.create({
+    data: {
+      idLote: loteIndividualParent.id,
+      idProductoBase: 5,
+      pesoKg: 15,
+      precioKg: 13333,
+      precioTotal: 200000,
+      unidades: 10,
+      procedenciaId: procedencia1?.id
+    }
+  });
+  console.log("✔ Lote Individual creado.");
   console.log("\n📊 RESUMEN DE DATOS:");
   console.log("- Tapa de cogote (id: 1): 22 + 30 + 25 = 77 kg");
   console.log("- Cogote (id: 3): 18 + 20 + 15 = 53 kg");

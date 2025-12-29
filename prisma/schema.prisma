@@ -58,34 +58,16 @@ model ProductoSalidaComponente {
   @@unique([productoSalidaId, subparteBaseId])
 }
 
-model ProductoSalidaComponenteLote {
-  id               Int @id @default(autoincrement())
-  productoSalidaId Int
-  loteId           Int
 
-  productoSalida ProductoSalida @relation(fields: [productoSalidaId], references: [id])
-  lote           Lote           @relation(fields: [loteId], references: [id])
-  @@unique([productoSalidaId, loteId])
-}
-
-model ProductoSalidaComponenteSubparte {
-  id               Int @id @default(autoincrement())
-  productoSalidaId Int
-  subparteLoteId   Int
-
-  productoSalida ProductoSalida @relation(fields: [productoSalidaId], references: [id])
-  subparteLote   SubparteLote   @relation(fields: [subparteLoteId], references: [id])
-  @@unique([productoSalidaId, subparteLoteId])
-}
 
 model ProductoSalidaComponenteIndividual {
   id               Int @id @default(autoincrement())
   productoSalidaId Int
-  loteIndividualId Int
+  productoBaseId   Int
 
   productoSalida   ProductoSalida @relation(fields: [productoSalidaId], references: [id])
-  loteIndividual   LoteIndividual @relation(fields: [loteIndividualId], references: [idLote])
-  @@unique([productoSalidaId, loteIndividualId])
+  productoBase     ProductoBase   @relation(fields: [productoBaseId], references: [id])
+  @@unique([productoSalidaId, productoBaseId])
 }
 
 /* ================================
@@ -200,6 +182,7 @@ model ProductoBase {
 
   lotesIndividuales LoteIndividual[]
   alertasReglas     AlertaRegla[]
+  productosSalidaComponentes ProductoSalidaComponenteIndividual[]
 }
 
 model LoteIndividual {
@@ -216,7 +199,7 @@ model LoteIndividual {
 
   lote     Lote         @relation(fields: [idLote], references: [id])
   producto ProductoBase @relation(fields: [idProductoBase], references: [id])
-  productosSalida ProductoSalidaComponenteIndividual[]
+  // Removed relation to ProductoSalidaComponenteIndividual
   alertasReglas AlertaRegla[]
 }
 

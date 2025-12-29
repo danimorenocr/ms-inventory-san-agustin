@@ -9,7 +9,7 @@ import { AddComponenteIndividualDto } from './dto/add-componente-individual.dto'
 
 @Injectable()
 export class ProductoSalidaService {
-  constructor(private readonly repository: ProductoSalidaRepository) {}
+  constructor(private readonly repository: ProductoSalidaRepository) { }
 
   async create(createProductoSalidaDto: CreateProductoSalidaDto) {
     return this.repository.create(createProductoSalidaDto);
@@ -86,11 +86,11 @@ export class ProductoSalidaService {
 
   async removeComponenteIndividual(
     productoSalidaId: number,
-    loteIndividualId: number,
+    productoBaseId: number,
   ) {
     return this.repository.removeComponenteIndividual(
       productoSalidaId,
-      loteIndividualId,
+      productoBaseId,
     );
   }
 }

@@ -18,7 +18,7 @@ import { AddComponenteIndividualDto } from './dto/add-componente-individual.dto'
 
 @Controller('productos-salida')
 export class ProductoSalidaController {
-  constructor(private readonly service: ProductoSalidaService) {}
+  constructor(private readonly service: ProductoSalidaService) { }
 
   @Post()
   create(@Body() createProductoSalidaDto: CreateProductoSalidaDto) {
@@ -108,14 +108,14 @@ export class ProductoSalidaController {
     return this.service.addComponenteIndividual(addComponenteIndividualDto);
   }
 
-  @Delete('componentes/individual/:productoSalidaId/:loteIndividualId')
+  @Delete('componentes/individual/:productoSalidaId/:productoBaseId')
   removeComponenteIndividual(
     @Param('productoSalidaId', ParseIntPipe) productoSalidaId: number,
-    @Param('loteIndividualId', ParseIntPipe) loteIndividualId: number,
+    @Param('productoBaseId', ParseIntPipe) productoBaseId: number,
   ) {
     return this.service.removeComponenteIndividual(
       productoSalidaId,
-      loteIndividualId,
+      productoBaseId,
     );
   }
 }

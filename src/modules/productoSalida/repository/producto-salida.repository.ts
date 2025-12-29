@@ -9,7 +9,7 @@ import { AddComponenteIndividualDto } from '../dto/add-componente-individual.dto
 
 @Injectable()
 export class ProductoSalidaRepository {
-  constructor(private prisma: PrismaService) {}
+  constructor(private prisma: PrismaService) { }
 
   // ========== PRODUCTOS SALIDA ==========
   async create(data: CreateProductoSalidaDto) {
@@ -19,7 +19,7 @@ export class ProductoSalidaRepository {
         componentes: { include: { subparteBase: true } },
         componentesLote: { include: { lote: true } },
         componentesSubparte: { include: { subparteLote: true } },
-        componentesIndividual: { include: { loteIndividual: true } },
+        componentesIndividual: { include: { productoBase: true } },
       },
     });
   }
@@ -30,7 +30,7 @@ export class ProductoSalidaRepository {
         componentes: { include: { subparteBase: true } },
         componentesLote: { include: { lote: true } },
         componentesSubparte: { include: { subparteLote: true } },
-        componentesIndividual: { include: { loteIndividual: true } },
+        componentesIndividual: { include: { productoBase: true } },
       },
     });
   }
@@ -42,7 +42,7 @@ export class ProductoSalidaRepository {
         componentes: { include: { subparteBase: true } },
         componentesLote: { include: { lote: true } },
         componentesSubparte: { include: { subparteLote: true } },
-        componentesIndividual: { include: { loteIndividual: true } },
+        componentesIndividual: { include: { productoBase: true } },
       },
     });
   }
@@ -55,7 +55,7 @@ export class ProductoSalidaRepository {
         componentes: { include: { subparteBase: true } },
         componentesLote: { include: { lote: true } },
         componentesSubparte: { include: { subparteLote: true } },
-        componentesIndividual: { include: { loteIndividual: true } },
+        componentesIndividual: { include: { productoBase: true } },
       },
     });
   }
@@ -144,20 +144,20 @@ export class ProductoSalidaRepository {
       data,
       include: {
         productoSalida: true,
-        loteIndividual: true,
+        productoBase: true,
       },
     });
   }
 
   async removeComponenteIndividual(
     productoSalidaId: number,
-    loteIndividualId: number,
+    productoBaseId: number,
   ) {
     return this.prisma.productoSalidaComponenteIndividual.delete({
       where: {
-        productoSalidaId_loteIndividualId: {
+        productoSalidaId_productoBaseId: {
           productoSalidaId,
-          loteIndividualId,
+          productoBaseId,
         },
       },
     });
