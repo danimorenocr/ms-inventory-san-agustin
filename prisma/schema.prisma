@@ -43,8 +43,7 @@ model ProductoSalida {
   activo Boolean @default(true)
 
   componentes            ProductoSalidaComponente[]
-  componentesLote        ProductoSalidaComponenteLote[]
-  componentesSubparte    ProductoSalidaComponenteSubparte[]
+
   componentesIndividual  ProductoSalidaComponenteIndividual[]
 }
 
@@ -57,7 +56,6 @@ model ProductoSalidaComponente {
   subparteBase   SubparteBase   @relation(fields: [subparteBaseId], references: [id])
   @@unique([productoSalidaId, subparteBaseId])
 }
-
 
 
 model ProductoSalidaComponenteIndividual {
@@ -130,7 +128,7 @@ model Lote {
   categoriasLote CategoriaLote[]
   subpartesLote  SubparteLote[]
   loteIndividual LoteIndividual?
-  productosSalida ProductoSalidaComponenteLote[]
+
 
   alertasReglas AlertaRegla[]
 }
@@ -166,7 +164,7 @@ model SubparteLote {
   subparteBase  SubparteBase  @relation(fields: [idSubparteBase], references: [id])
 
   movimientos MovimientoInventario[]
-  productosSalida ProductoSalidaComponenteSubparte[]
+
   alertasReglas AlertaRegla[]
 }
 

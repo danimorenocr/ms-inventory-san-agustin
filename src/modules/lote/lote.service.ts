@@ -23,7 +23,7 @@ export class LoteService {
     console.log("👤 Usuario autenticado:", user);
     console.log("📦 DTO recibido:", createLoteDto);
 
-    // Crear lote con ID del usuario autenticado (user.sub contiene el ID)
+    // Crear lote con ID del usuario autenticado
     const loteData = {
       ...createLoteDto,
       idUsuario: user.sub,
@@ -31,8 +31,10 @@ export class LoteService {
 
     console.log("💾 Datos a guardar en BD:", loteData);
 
+    // 1. Crear el lote principal
     const lote = await this.repository.create(loteData as CreateLoteDto);
 
+    // 2. Obtener la estructura base para clonar (categorías y subpartes)
     const categoriasBase = await this.prisma.categoriaBase.findMany({
       where: {
         tipoAnimal: createLoteDto.tipoAnimal,
@@ -41,26 +43,32 @@ export class LoteService {
       include: { subpartes: { where: { estado: true } } },
     });
 
-    for (const categoriaBase of categoriasBase) {
-      const categoriaLote = await this.prisma.categoriaLote.create({
-        data: {
-          idLote: lote.id,
-          idCategoriaBase: categoriaBase.id,
-          pesoCategoriaKg: 0,
-        },
-      });
-
-      for (const subparteBase of categoriaBase.subpartes) {
-        await this.prisma.subparteLote.create({
+    // 3. Crear categorías y subpartes en paralelo
+    // Usamos Promise.all para disparar la creación de cada categoría simultáneamente
+    await Promise.all(
+      categoriasBase.map(async (categoriaBase) => {
+        // a. Crear la Categoría Lote
+        const categoriaLote = await this.prisma.categoriaLote.create({
           data: {
             idLote: lote.id,
-            idCategoriaLote: categoriaLote.id,
-            idSubparteBase: subparteBase.id,
-            pesoSubparteKg: 0,
+            idCategoriaBase: categoriaBase.id,
+            pesoCategoriaKg: 0,
           },
         });
-      }
-    }
+
+        // b. Crear todas las subpartes de esta categoría en una sola operación (bulk insert)
+        if (categoriaBase.subpartes.length > 0) {
+          await this.prisma.subparteLote.createMany({
+            data: categoriaBase.subpartes.map((subparteBase) => ({
+              idLote: lote.id,
+              idCategoriaLote: categoriaLote.id,
+              idSubparteBase: subparteBase.id,
+              pesoSubparteKg: 0,
+            })),
+          });
+        }
+      })
+    );
 
     return this.findOne(lote.id);
   }
