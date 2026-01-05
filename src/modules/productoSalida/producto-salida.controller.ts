@@ -54,6 +54,7 @@ export class ProductoSalidaController {
     @Param('id', ParseIntPipe) id: number,
     @Body() body: { cantidad: number; motivo?: string },
   ) {
+    console.log(`📡 [API] Solicitud recibida: Descontar stock - ID: ${id}, Cantidad: ${body.cantidad}, Motivo: ${body.motivo}`);
     return this.service.descontarStock(id, body.cantidad, body.motivo);
   }
 
@@ -76,6 +77,7 @@ export class ProductoSalidaController {
     );
   }
 
+  /*
   // ========== COMPONENTES LOTE ==========
   @Post('componentes/lote')
   addComponenteLote(@Body() addComponenteLoteDto: AddComponenteLoteDto) {
@@ -108,6 +110,7 @@ export class ProductoSalidaController {
       subparteLoteId,
     );
   }
+  */
 
   // ========== COMPONENTES INDIVIDUAL ==========
   @Post('componentes/individual')

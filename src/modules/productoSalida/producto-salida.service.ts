@@ -11,7 +11,7 @@ import { AddComponenteIndividualDto } from './dto/add-componente-individual.dto'
 export class ProductoSalidaService {
   private readonly logger = new Logger(ProductoSalidaService.name);
 
-  constructor(private readonly repository: ProductoSalidaRepository) {}
+  constructor(private readonly repository: ProductoSalidaRepository) { }
 
   async create(createProductoSalidaDto: CreateProductoSalidaDto) {
     return this.repository.create(createProductoSalidaDto);
@@ -46,29 +46,40 @@ export class ProductoSalidaService {
    * @param motivo Motivo del descuento
    */
   async descontarStock(productoSalidaId: number, cantidad: number, motivo: string = 'Venta realizada') {
+    this.logger.log(`🔄 Iniciando proceso de descuento de stock para ProductoID: ${productoSalidaId}, Cantidad: ${cantidad}`);
+
     const producto = await this.findOne(productoSalidaId);
 
     if (!producto) {
+      this.logger.error(`❌ Producto Salida con ID ${productoSalidaId} no encontrado`);
       throw new NotFoundException(`Producto Salida con ID ${productoSalidaId} no encontrado`);
     }
 
+    this.logger.log(`✅ Producto encontrado: ${producto.nombre}`);
+
     if (cantidad <= 0) {
+      this.logger.warn(`⚠️ Intento de descontar cantidad inválida: ${cantidad}`);
       throw new BadRequestException('La cantidad a descontar debe ser mayor a 0');
     }
 
-    // Aquí puedes agregar más lógica si tienes un campo de stock/cantidad
-    // Por ahora solo registramos el movimiento
+    // LOGS DE DEBUGGEO
+    this.logger.debug(`🔍 Analizando componentes del producto para descontar inventario...`);
+    // TODO: Implementar lógica de búsqueda de lotes/subpartesDisponibles (FIFO)
+
+    this.logger.warn(`⚠️ ATENCIÓN: La lógica de persistencia en DB para actualizar stock NO está implementada aún. Solo se está registrando el evento.`);
+
     this.logger.log(
-      `✅ Stock descontado: ${cantidad}kg del producto "${producto.nombre}" (Motivo: ${motivo})`,
+      `✅ [SIMULACIÓN] Stock descontado: ${cantidad}kg del producto "${producto.nombre}" (Motivo: ${motivo})`,
     );
 
     return {
-      mensaje: 'Stock descontado exitosamente',
+      mensaje: 'Stock descontado exitosamente (Simulado - Lógica pendiente)',
       productoId: productoSalidaId,
       productoNombre: producto.nombre,
       cantidadDescontada: cantidad,
       motivo,
       timestamp: new Date(),
+      status: 'SIMULATED'
     };
   }
 
@@ -87,31 +98,33 @@ export class ProductoSalidaService {
     );
   }
 
-  async addComponenteLote(addComponenteLoteDto: AddComponenteLoteDto) {
-    return this.repository.addComponenteLote(addComponenteLoteDto);
-  }
-
-  async removeComponenteLote(productoSalidaId: number, loteId: number) {
-    return this.repository.removeComponenteLote(productoSalidaId, loteId);
-  }
-
-  async addComponenteSubparteLote(
-    addComponenteSubparteLoteDto: AddComponenteSubparteLoteDto,
-  ) {
-    return this.repository.addComponenteSubparteLote(
-      addComponenteSubparteLoteDto,
-    );
-  }
-
-  async removeComponenteSubparteLote(
-    productoSalidaId: number,
-    subparteLoteId: number,
-  ) {
-    return this.repository.removeComponenteSubparteLote(
-      productoSalidaId,
-      subparteLoteId,
-    );
-  }
+  /*
+    async addComponenteLote(addComponenteLoteDto: AddComponenteLoteDto) {
+      return this.repository.addComponenteLote(addComponenteLoteDto);
+    }
+  
+    async removeComponenteLote(productoSalidaId: number, loteId: number) {
+      return this.repository.removeComponenteLote(productoSalidaId, loteId);
+    }
+  
+    async addComponenteSubparteLote(
+      addComponenteSubparteLoteDto: AddComponenteSubparteLoteDto,
+    ) {
+      return this.repository.addComponenteSubparteLote(
+        addComponenteSubparteLoteDto,
+      );
+    }
+  
+    async removeComponenteSubparteLote(
+      productoSalidaId: number,
+      subparteLoteId: number,
+    ) {
+      return this.repository.removeComponenteSubparteLote(
+        productoSalidaId,
+        subparteLoteId,
+      );
+    }
+  */
 
   async addComponenteIndividual(
     addComponenteIndividualDto: AddComponenteIndividualDto,
