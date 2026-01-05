@@ -48,6 +48,15 @@ export class ProductoSalidaController {
     return this.service.remove(id);
   }
 
+  // ========== DESCUENTO DE STOCK ==========
+  @Post(':id/descontar')
+  descontarStock(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() body: { cantidad: number; motivo?: string },
+  ) {
+    return this.service.descontarStock(id, body.cantidad, body.motivo);
+  }
+
   // ========== COMPONENTES SUBPARTE BASE ==========
   @Post('componentes/subparte-base')
   addComponenteSubparte(

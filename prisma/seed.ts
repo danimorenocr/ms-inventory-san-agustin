@@ -288,7 +288,268 @@ async function main() {
   console.log("- Bola de brazo (id: 10): 25 + 30 = 55 kg");
   console.log("- Murillo (id: 12): 20 + 25 = 45 kg");
 
-  console.log("\n🌱 Seed completado con éxito.");
+  // ============================================================
+  // 8. CREAR PROCEDENCIAS
+  // ============================================================
+  const procedenciaFinca = await prisma.procedencia.create({
+    data: {
+      nombre: "Finca San Agustín"
+    }
+  });
+
+  const procedenciaMatadero = await prisma.procedencia.create({
+    data: {
+      nombre: "Matadero Central"
+    }
+  });
+
+  console.log("✔ Procedencias creadas.");
+
+  // ============================================================
+  // 9. CREAR LOTES INDIVIDUALES (COMPRAS)
+  // ============================================================
+  const productosBaseList = await prisma.productoBase.findMany({ take: 3 });
+
+  const loteIndividual1 = await prisma.loteIndividual.create({
+    data: {
+      idLote: (await prisma.lote.create({
+        data: {
+          tipoAnimal: "res",
+          tipoIngreso: "Compra individual",
+          proveedorId: proveedor1.id,
+          pesoKgInicial: 50,
+          pesoKgActual: 50,
+          precioTotal: 600000,
+          idUsuario: 1,
+          procedenciaId: procedenciaFinca.id,
+        }
+      })).id,
+      idProductoBase: productosBaseList[0]?.id || 1,
+      pesoKg: 50,
+      precioKg: 12000,
+      precioTotal: 600000,
+      unidades: 1,
+    }
+  });
+
+  const loteIndividual2 = await prisma.loteIndividual.create({
+    data: {
+      idLote: (await prisma.lote.create({
+        data: {
+          tipoAnimal: "res",
+          tipoIngreso: "Compra individual",
+          proveedorId: proveedor1.id,
+          pesoKgInicial: 30,
+          pesoKgActual: 30,
+          precioTotal: 360000,
+          idUsuario: 1,
+          procedenciaId: procedenciaMatadero.id,
+        }
+      })).id,
+      idProductoBase: productosBaseList[1]?.id || 2,
+      pesoKg: 30,
+      precioKg: 12000,
+      precioTotal: 360000,
+      unidades: 1,
+    }
+  });
+
+  console.log("✔ Lotes individuales creados.");
+
+  // ============================================================
+  // 10. CREAR PRODUCTOS DE SALIDA
+  // ============================================================
+  const productoSalida1 = await prisma.productoSalida.create({
+    data: {
+      nombre: "Corte Premium",
+      unidad: "kg",
+      etiqueta: "PREMIUM",
+      activo: true
+    }
+  });
+
+  const productoSalida2 = await prisma.productoSalida.create({
+    data: {
+      nombre: "Corte Estándar",
+      unidad: "kg",
+      etiqueta: "STANDARD",
+      activo: true
+    }
+  });
+
+  const productoSalida3 = await prisma.productoSalida.create({
+    data: {
+      nombre: "Paquete Económico",
+      unidad: "unidad",
+      etiqueta: "ECO",
+      activo: true
+    }
+  });
+
+  console.log("✔ Productos de salida creados.");
+
+  // ============================================================
+  // 11. ASOCIAR COMPONENTES DE PRODUCTOS DE SALIDA
+  // ============================================================
+  const subpartesLote = await prisma.subparteLote.findMany({ take: 3 });
+  
+  // Componente base para producto de salida
+  if (productosBaseList[0]) {
+    await prisma.productoSalidaComponente.create({
+      data: {
+        productoSalidaId: productoSalida1.id,
+        subparteBaseId: productosBaseList[0].id
+      }
+    });
+  }
+
+  if (subpartesLote[0]) {
+    await prisma.productoSalidaComponenteLote.create({
+      data: {
+        productoSalidaId: productoSalida1.id,
+        loteId: loteRes.id
+      }
+    });
+  }
+
+  if (subpartesLote[1]) {
+    await prisma.productoSalidaComponenteSubparte.create({
+      data: {
+        productoSalidaId: productoSalida2.id,
+        subparteLoteId: subpartesLote[1].id
+      }
+    });
+  }
+
+  await prisma.productoSalidaComponenteIndividual.create({
+    data: {
+      productoSalidaId: productoSalida3.id,
+      loteIndividualId: loteIndividual1.idLote
+    }
+  });
+
+  console.log("✔ Componentes de productos de salida asociados.");
+
+  // ============================================================
+  // 12. CREAR MOVIMIENTOS DE INVENTARIO
+  // ============================================================
+  if (subpartesLote[0]) {
+    await prisma.movimientoInventario.createMany({
+      data: [
+        {
+          tipo: "VENTA",
+          referenciaId: productoSalida1.id,
+          subparteLoteId: subpartesLote[0].id,
+          subparteBaseId: subpartesLote[0].idSubparteBase,
+          peso: 10,
+          fecha: new Date()
+        },
+        {
+          tipo: "MERMA",
+          referenciaId: null,
+          subparteLoteId: subpartesLote[0].id,
+          subparteBaseId: subpartesLote[0].idSubparteBase,
+          peso: 2,
+          fecha: new Date()
+        }
+      ]
+    });
+  }
+
+  if (subpartesLote[1]) {
+    await prisma.movimientoInventario.create({
+      data: {
+        tipo: "AJUSTE",
+        referenciaId: null,
+        subparteLoteId: subpartesLote[1].id,
+        subparteBaseId: subpartesLote[1].idSubparteBase,
+        peso: 5,
+        fecha: new Date()
+      }
+    });
+  }
+
+  console.log("✔ Movimientos de inventario creados.");
+
+  // ============================================================
+  // 13. CREAR ALERTAS
+  // ============================================================
+  await prisma.alerta.createMany({
+    data: [
+      {
+        tipo: "INFO",
+        mensaje: "Nuevo lote ingresado: Res #" + loteRes.id,
+        fecha: new Date(),
+        leida: false
+      },
+      {
+        tipo: "WARNING",
+        mensaje: "Stock bajo en Cogote",
+        fecha: new Date(),
+        leida: false
+      },
+      {
+        tipo: "CRITICO",
+        mensaje: "Temperatura fuera de rango en almacén",
+        fecha: new Date(Date.now() - 86400000), // Hace 1 día
+        leida: true
+      }
+    ]
+  });
+
+  console.log("✔ Alertas creadas.");
+
+  // ============================================================
+  // 14. CREAR ALERTAS POR REGLA
+  // ============================================================
+  if (subpartesLote[0]) {
+    await prisma.alertaRegla.createMany({
+      data: [
+        {
+          subparteLoteId: subpartesLote[0].id,
+          tipo: "MINIMO_KG",
+          valor: 5,
+          activa: true,
+          fechaCreada: new Date()
+        },
+        {
+          loteId: loteRes.id,
+          tipo: "PORCENTAJE",
+          valor: 20,
+          activa: true,
+          fechaCreada: new Date()
+        }
+      ]
+    });
+  }
+
+  if (productosBaseList[0]) {
+    await prisma.alertaRegla.create({
+      data: {
+        productoId: productosBaseList[0].id,
+        tipo: "MINIMO_KG",
+        valor: 10,
+        activa: true,
+        fechaCreada: new Date()
+      }
+    });
+  }
+
+  if (loteIndividual1) {
+    await prisma.alertaRegla.create({
+      data: {
+        loteIndividualId: loteIndividual1.idLote,
+        tipo: "PORCENTAJE",
+        valor: 15,
+        activa: true,
+        fechaCreada: new Date()
+      }
+    });
+  }
+
+  console.log("✔ Alertas por regla creadas.");
+
+  console.log("\n🌱 Seed completado con éxito - Todas las tablas pobladas.");
 }
 
 main()
