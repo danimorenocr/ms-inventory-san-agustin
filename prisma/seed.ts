@@ -458,7 +458,7 @@ async function main() {
   // 11. ASOCIAR COMPONENTES DE PRODUCTOS DE SALIDA
   // ============================================================
   const subpartesLote = await prisma.subparteLote.findMany({ take: 3 });
-  
+
   // Componente base para producto de salida
   if (productosBaseList[0]) {
     await prisma.productoSalidaComponente.create({
@@ -469,28 +469,12 @@ async function main() {
     });
   }
 
-  if (subpartesLote[0]) {
-    await prisma.productoSalidaComponenteLote.create({
-      data: {
-        productoSalidaId: productoSalida1.id,
-        loteId: loteRes.id
-      }
-    });
-  }
 
-  if (subpartesLote[1]) {
-    await prisma.productoSalidaComponenteSubparte.create({
-      data: {
-        productoSalidaId: productoSalida2.id,
-        subparteLoteId: subpartesLote[1].id
-      }
-    });
-  }
 
   await prisma.productoSalidaComponenteIndividual.create({
     data: {
       productoSalidaId: productoSalida3.id,
-      loteIndividualId: loteIndividual1.idLote
+      productoBaseId: loteIndividual1.idProductoBase
     }
   });
 
