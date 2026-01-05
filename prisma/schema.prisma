@@ -40,6 +40,7 @@ model ProductoSalida {
   id     Int     @id @default(autoincrement())
   nombre String
   unidad String  // kg | unidad
+  etiqueta String?
   activo Boolean @default(true)
 
   componentes            ProductoSalidaComponente[]

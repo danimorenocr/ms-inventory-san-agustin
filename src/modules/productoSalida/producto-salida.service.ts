@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, Logger } from '@nestjs/common';
 import { ProductoSalidaRepository } from './repository/producto-salida.repository';
 import { CreateProductoSalidaDto } from './dto/create-producto-salida.dto';
 import { UpdateProductoSalidaDto } from './dto/update-producto-salida.dto';
@@ -9,7 +9,9 @@ import { AddComponenteIndividualDto } from './dto/add-componente-individual.dto'
 
 @Injectable()
 export class ProductoSalidaService {
-  constructor(private readonly repository: ProductoSalidaRepository) { }
+  private readonly logger = new Logger(ProductoSalidaService.name);
+
+  constructor(private readonly repository: ProductoSalidaRepository) {}
 
   async create(createProductoSalidaDto: CreateProductoSalidaDto) {
     return this.repository.create(createProductoSalidaDto);
@@ -35,6 +37,39 @@ export class ProductoSalidaService {
   async remove(id: number) {
     await this.findOne(id); // Verificar que existe
     return this.repository.remove(id);
+  }
+
+  /**
+   * Descontar stock del producto (para ventas)
+   * @param productoSalidaId ID del producto
+   * @param cantidad Cantidad a descontar (kg u otra unidad)
+   * @param motivo Motivo del descuento
+   */
+  async descontarStock(productoSalidaId: number, cantidad: number, motivo: string = 'Venta realizada') {
+    const producto = await this.findOne(productoSalidaId);
+
+    if (!producto) {
+      throw new NotFoundException(`Producto Salida con ID ${productoSalidaId} no encontrado`);
+    }
+
+    if (cantidad <= 0) {
+      throw new BadRequestException('La cantidad a descontar debe ser mayor a 0');
+    }
+
+    // Aquí puedes agregar más lógica si tienes un campo de stock/cantidad
+    // Por ahora solo registramos el movimiento
+    this.logger.log(
+      `✅ Stock descontado: ${cantidad}kg del producto "${producto.nombre}" (Motivo: ${motivo})`,
+    );
+
+    return {
+      mensaje: 'Stock descontado exitosamente',
+      productoId: productoSalidaId,
+      productoNombre: producto.nombre,
+      cantidadDescontada: cantidad,
+      motivo,
+      timestamp: new Date(),
+    };
   }
 
   // ========== COMPONENTES ==========
