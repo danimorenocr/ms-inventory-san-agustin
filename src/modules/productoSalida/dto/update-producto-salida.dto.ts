@@ -1,6 +1,6 @@
 import { PartialType } from '@nestjs/swagger';
 import { CreateProductoSalidaDto } from './create-producto-salida.dto';
-import { IsString, IsOptional, IsBoolean } from 'class-validator';
+import { IsString, IsOptional, IsBoolean, IsNumber } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class UpdateProductoSalidaDto extends PartialType(CreateProductoSalidaDto) {
@@ -23,6 +23,16 @@ export class UpdateProductoSalidaDto extends PartialType(CreateProductoSalidaDto
   @IsString()
   @IsOptional()
   unidad?: string;
+
+  @ApiProperty({
+    description: 'Precio unitario del producto',
+    example: 25000,
+    type: Number,
+    required: false,
+  })
+  @IsNumber()
+  @IsOptional()
+  precio?: number;
 
   @ApiProperty({
     description: 'Etiqueta del producto',

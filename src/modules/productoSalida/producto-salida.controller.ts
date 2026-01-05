@@ -48,6 +48,14 @@ export class ProductoSalidaController {
     return this.service.remove(id);
   }
 
+  @Patch(':id/precio')
+  actualizarPrecio(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() body: { precio: number },
+  ) {
+    return this.service.actualizarPrecio(id, body.precio);
+  }
+
   // ========== DESCUENTO DE STOCK ==========
   @Post(':id/descontar')
   descontarStock(

@@ -39,6 +39,11 @@ export class ProductoSalidaService {
     return this.repository.remove(id);
   }
 
+  async actualizarPrecio(id: number, precio: number) {
+    await this.findOne(id); // Verificar que existe
+    return this.repository.actualizarPrecio(id, precio);
+  }
+
   /**
    * Descontar stock del producto (para ventas)
    * @param productoSalidaId ID del producto

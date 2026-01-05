@@ -74,6 +74,21 @@ export class ProductoSalidaRepository {
     });
   }
 
+  async actualizarPrecio(id: number, precio: number) {
+    return this.prisma.productoSalida.update({
+      where: { id },
+      data: { precio },
+      include: {
+        componentes: {
+          include: { subparteBase: true },
+        },
+        componentesIndividual: {
+          include: { productoBase: true },
+        },
+      },
+    });
+  }
+
   // ========== COMPONENTES SUBPARTE BASE ==========
   async addComponenteSubparte(data: AddComponenteSubparteDto) {
     return this.prisma.productoSalidaComponente.create({
