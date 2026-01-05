@@ -426,6 +426,7 @@ async function main() {
     data: {
       nombre: "Corte Premium",
       unidad: "kg",
+      precio: 45000,
       etiqueta: "PREMIUM",
       activo: true
     }
@@ -435,6 +436,7 @@ async function main() {
     data: {
       nombre: "Corte Estándar",
       unidad: "kg",
+      precio: 35000,
       etiqueta: "STANDARD",
       activo: true
     }
@@ -444,6 +446,7 @@ async function main() {
     data: {
       nombre: "Paquete Económico",
       unidad: "unidad",
+      precio: 25000,
       etiqueta: "ECO",
       activo: true
     }
