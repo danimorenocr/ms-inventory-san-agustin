@@ -60,10 +60,13 @@ export class ProductoSalidaController {
   @Post(':id/descontar')
   descontarStock(
     @Param('id', ParseIntPipe) id: number,
-    @Body() body: { cantidad: number; motivo?: string },
+    @Body() body: { componentes?: any[]; cantidad?: number; motivo?: string },
   ) {
-    console.log(`📡 [API] Solicitud recibida: Descontar stock - ID: ${id}, Cantidad: ${body.cantidad}, Motivo: ${body.motivo}`);
-    return this.service.descontarStock(id, body.cantidad, body.motivo);
+    console.log(`📡 [API] Solicitud recibida: Descontar stock - ID: ${id}`);
+    console.log(`   Componentes:`, JSON.stringify(body.componentes, null, 2));
+    console.log(`   Cantidad total: ${body.cantidad}, Motivo: ${body.motivo}`);
+
+    return this.service.descontarStock(id, body.componentes, body.cantidad, body.motivo);
   }
 
   // ========== COMPONENTES SUBPARTE BASE ==========
