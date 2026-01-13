@@ -17,7 +17,7 @@ import { UpdateLoteIndividualDto } from './dto/update-individuallote.dto';
 @ApiTags('Lotes Individuales')
 @Controller('lotes-individuales')
 export class LoteIndividualController {
-  constructor(private readonly loteIndividualService: LoteIndividualService) {}
+  constructor(private readonly loteIndividualService: LoteIndividualService) { }
 
   @Post()
   @ApiOperation({ summary: 'Crear un nuevo lote individual' })
@@ -36,6 +36,13 @@ export class LoteIndividualController {
       return this.loteIndividualService.findByProducto(idProductoBase);
     }
     return this.loteIndividualService.findAll();
+  }
+
+  @Get('reportes/total-por-producto')
+  @ApiOperation({ summary: 'Obtener stock total agrupado por ProductoBase' })
+  @ApiResponse({ status: 200, description: 'Stock total por producto base' })
+  getTotalPorProducto() {
+    return this.loteIndividualService.getTotalPorProducto();
   }
 
   @Get(':idLote')
