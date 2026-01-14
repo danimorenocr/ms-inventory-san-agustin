@@ -18,7 +18,7 @@ import { AddComponenteIndividualDto } from './dto/add-componente-individual.dto'
 
 @Controller('productos-salida')
 export class ProductoSalidaController {
-  constructor(private readonly service: ProductoSalidaService) {}
+  constructor(private readonly service: ProductoSalidaService) { }
 
   @Post()
   create(@Body() createProductoSalidaDto: CreateProductoSalidaDto) {
@@ -48,13 +48,25 @@ export class ProductoSalidaController {
     return this.service.remove(id);
   }
 
+  @Patch(':id/precio')
+  actualizarPrecio(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() body: { precio: number },
+  ) {
+    return this.service.actualizarPrecio(id, body.precio);
+  }
+
   // ========== DESCUENTO DE STOCK ==========
   @Post(':id/descontar')
   descontarStock(
     @Param('id', ParseIntPipe) id: number,
-    @Body() body: { cantidad: number; motivo?: string },
+    @Body() body: { componentes?: any[]; cantidad?: number; motivo?: string },
   ) {
-    return this.service.descontarStock(id, body.cantidad, body.motivo);
+    console.log(`📡 [API] Solicitud recibida: Descontar stock - ID: ${id}`);
+    console.log(`   Componentes:`, JSON.stringify(body.componentes, null, 2));
+    console.log(`   Cantidad total: ${body.cantidad}, Motivo: ${body.motivo}`);
+
+    return this.service.descontarStock(id, body.componentes, body.cantidad, body.motivo);
   }
 
   // ========== COMPONENTES SUBPARTE BASE ==========
@@ -76,6 +88,7 @@ export class ProductoSalidaController {
     );
   }
 
+  /*
   // ========== COMPONENTES LOTE ==========
   @Post('componentes/lote')
   addComponenteLote(@Body() addComponenteLoteDto: AddComponenteLoteDto) {
@@ -108,6 +121,7 @@ export class ProductoSalidaController {
       subparteLoteId,
     );
   }
+  */
 
   // ========== COMPONENTES INDIVIDUAL ==========
   @Post('componentes/individual')
@@ -117,14 +131,14 @@ export class ProductoSalidaController {
     return this.service.addComponenteIndividual(addComponenteIndividualDto);
   }
 
-  @Delete('componentes/individual/:productoSalidaId/:loteIndividualId')
+  @Delete('componentes/individual/:productoSalidaId/:productoBaseId')
   removeComponenteIndividual(
     @Param('productoSalidaId', ParseIntPipe) productoSalidaId: number,
-    @Param('loteIndividualId', ParseIntPipe) loteIndividualId: number,
+    @Param('productoBaseId', ParseIntPipe) productoBaseId: number,
   ) {
     return this.service.removeComponenteIndividual(
       productoSalidaId,
-      loteIndividualId,
+      productoBaseId,
     );
   }
 }

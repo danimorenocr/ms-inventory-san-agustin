@@ -4,7 +4,7 @@ import { Type } from 'class-transformer';
 export class StockCheckItemDto {
     @IsNumber()
     @IsNotEmpty()
-    subparteBaseId: number;
+    productoSalidaId: number;
 
     @IsNumber()
     @Min(0)

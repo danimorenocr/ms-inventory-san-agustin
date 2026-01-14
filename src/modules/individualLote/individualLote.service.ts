@@ -5,7 +5,7 @@ import { LoteIndividualRepository } from './repository/individualLote.repository
 
 @Injectable()
 export class LoteIndividualService {
-  constructor(private readonly repository: LoteIndividualRepository) {}
+  constructor(private readonly repository: LoteIndividualRepository) { }
 
   async create(createLoteIndividualDto: CreateLoteIndividualDto) {
     return this.repository.create(createLoteIndividualDto);
@@ -35,5 +35,9 @@ export class LoteIndividualService {
   async remove(idLote: number) {
     await this.findOne(idLote);
     return this.repository.remove(idLote);
+  }
+
+  async getTotalPorProducto() {
+    return this.repository.getTotalPorProducto();
   }
 }

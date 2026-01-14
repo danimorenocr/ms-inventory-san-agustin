@@ -1,4 +1,4 @@
-import { IsString, IsNotEmpty, IsOptional, IsBoolean } from 'class-validator';
+import { IsString, IsNotEmpty, IsOptional, IsBoolean, IsNumber } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class CreateProductoSalidaDto {
@@ -21,6 +21,16 @@ export class CreateProductoSalidaDto {
   @IsString()
   @IsNotEmpty()
   unidad: string; // kg | unidad
+
+  @ApiProperty({
+    description: 'Precio unitario del producto',
+    example: 25000,
+    type: Number,
+    required: false,
+  })
+  @IsNumber()
+  @IsOptional()
+  precio?: number;
 
   @ApiProperty({
     description: 'Etiqueta del producto',

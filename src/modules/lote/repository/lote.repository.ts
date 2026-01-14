@@ -17,6 +17,7 @@ export class LoteRepository {
     return this.prisma.lote.findMany({
       include: {
         proveedor: true,
+        procedencia: true,
         categoriasLote: {
           include: {
             categoriaBase: true,
@@ -44,14 +45,10 @@ export class LoteRepository {
       where: { id },
       include: {
         proveedor: true,
+        procedencia: true,
         categoriasLote: {
           include: {
             categoriaBase: true,
-            subpartes: {
-              include: {
-                subparteBase: true,
-              },
-            },
           },
         },
         subpartesLote: {

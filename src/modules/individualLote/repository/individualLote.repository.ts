@@ -5,7 +5,7 @@ import { UpdateLoteIndividualDto } from '../dto/update-individuallote.dto';
 
 @Injectable()
 export class LoteIndividualRepository {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService) { }
 
   async create(createLoteIndividualDto: CreateLoteIndividualDto) {
     return this.prisma.loteIndividual.create({
@@ -59,5 +59,36 @@ export class LoteIndividualRepository {
     return this.prisma.loteIndividual.delete({
       where: { idLote },
     });
+  }
+
+  async getTotalPorProducto() {
+    const result = await this.prisma.loteIndividual.groupBy({
+      by: ['idProductoBase'],
+      _sum: {
+        pesoKg: true,
+      },
+      where: {
+        pesoKg: { gt: 0 },
+      },
+    });
+
+    // Obtener nombres de productos
+    const productosConStock = await Promise.all(
+      result.map(async (item) => {
+        const producto = await this.prisma.productoBase.findUnique({
+          where: { id: item.idProductoBase },
+        });
+
+        return {
+          id: item.idProductoBase,
+          nombre: producto?.nombre || 'Producto desconocido',
+          totalKg: item._sum.pesoKg || 0,
+        };
+      }),
+    );
+
+    return {
+      productos: productosConStock,
+    };
   }
 }
