@@ -221,4 +221,40 @@ export class LoteService {
       totalGeneral: totalGeneral,
     };
   }
+
+  // ======================================================
+  // 📌 REPORTE: TOTAL POR CADA PRODUCTO BASE
+  // ======================================================
+  async getTotalPorProductoBase() {
+    const productos = await this.prisma.loteIndividual.groupBy({
+      by: ['idProductoBase'],
+      _sum: {
+        pesoKg: true,
+      },
+    });
+
+    const resultado = [];
+
+    for (const producto of productos) {
+      const productoBase = await this.prisma.productoBase.findUnique({
+        where: { id: producto.idProductoBase },
+      });
+
+      resultado.push({
+        id: producto.idProductoBase,
+        nombre: productoBase?.nombre || 'Desconocido',
+        totalKg: Number(producto._sum.pesoKg ?? 0),
+      });
+    }
+
+    // Ordenar por total descendente
+    resultado.sort((a, b) => b.totalKg - a.totalKg);
+
+    const totalGeneral = resultado.reduce((acc, item) => acc + item.totalKg, 0);
+
+    return {
+      productos: resultado,
+      totalGeneral: totalGeneral,
+    };
+  }
 }

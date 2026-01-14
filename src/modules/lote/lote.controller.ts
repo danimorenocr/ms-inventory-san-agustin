@@ -108,6 +108,18 @@ export class LoteController {
     return this.loteService.getTotalPorSubparte();
   }
 
+  @Get('reportes/total-por-producto-base')
+  @ApiOperation({
+    summary: 'Obtener el total de kg por cada producto base',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Totales agrupados por cada producto base',
+  })
+  getTotalPorProductoBase() {
+    return this.loteService.getTotalPorProductoBase();
+  }
+
   // ======================================================
   // 📌 OBTENER / ACTUALIZAR / ELIMINAR POR ID
   // ======================================================

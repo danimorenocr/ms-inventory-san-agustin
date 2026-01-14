@@ -54,7 +54,7 @@ model ProductoSalidaComponente {
   productoSalidaId Int
   subparteBaseId   Int
 
-  productoSalida ProductoSalida @relation(fields: [productoSalidaId], references: [id])
+  productoSalida ProductoSalida @relation(fields: [productoSalidaId], references: [id], onDelete: Cascade)
   subparteBase   SubparteBase   @relation(fields: [subparteBaseId], references: [id])
   @@unique([productoSalidaId, subparteBaseId])
 }
@@ -65,7 +65,7 @@ model ProductoSalidaComponenteIndividual {
   productoSalidaId Int
   productoBaseId   Int
 
-  productoSalida   ProductoSalida @relation(fields: [productoSalidaId], references: [id])
+  productoSalida   ProductoSalida @relation(fields: [productoSalidaId], references: [id], onDelete: Cascade)
   productoBase     ProductoBase   @relation(fields: [productoBaseId], references: [id])
   @@unique([productoSalidaId, productoBaseId])
 }
