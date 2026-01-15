@@ -69,6 +69,28 @@ export class ProductoSalidaController {
     return this.service.descontarStock(id, body.componentes, body.cantidad, body.motivo);
   }
 
+  @Post(':id/intercambio')
+  descontarIntercambio(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() body: { componentes: Array<{ baseId: number; peso: number }> },
+  ) {
+    console.log(`📡 [API] Intercambio - ProductoSalidaId: ${id}`);
+    console.log(`   Componentes:`, JSON.stringify(body.componentes, null, 2));
+
+    return this.service.descontarIntercambio(id, body.componentes);
+  }
+
+  @Post(':id/reintegro-intercambio')
+  reintegrarIntercambio(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() body: { componentes: Array<{ baseId: number; peso: number }> },
+  ) {
+    console.log(`📡 [API] Reintegro intercambio - ProductoSalidaId: ${id}`);
+    console.log(`   Componentes:`, JSON.stringify(body.componentes, null, 2));
+
+    return this.service.reintegrarIntercambio(id, body.componentes);
+  }
+
   // ========== COMPONENTES SUBPARTE BASE ==========
   @Post('componentes/subparte-base')
   addComponenteSubparte(

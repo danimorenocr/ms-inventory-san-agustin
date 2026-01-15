@@ -99,6 +99,80 @@ export class ProductoSalidaService {
     }
   }
 
+  /**
+   * Descuenta stock para un INTERCAMBIO de producto
+   * Recibe componentes con pesos específicos: [{ baseId, peso }, ...]
+   */
+  async descontarIntercambio(
+    productoSalidaId: number,
+    componentes: Array<{ baseId: number; peso: number }>,
+  ) {
+    this.logger.log(`🔄 Intercambio - ProductoSalidaId: ${productoSalidaId}`);
+
+    if (!componentes || componentes.length === 0) {
+      throw new BadRequestException('Se requieren componentes para el intercambio');
+    }
+
+    try {
+      const resultado = await this.fifoService.descontarIntercambio(
+        productoSalidaId,
+        componentes,
+        undefined,
+      );
+
+      this.logger.log(`✅ Intercambio completado`);
+
+      return {
+        mensaje: 'Stock descontado para intercambio',
+        productoId: productoSalidaId,
+        productoNombre: resultado.productoNombre,
+        cantidadDescontada: resultado.pesoDescontado,
+        itemsDescontados: resultado.itemsDescontados,
+        timestamp: new Date(),
+        status: 'SUCCESS'
+      };
+    } catch (error) {
+      this.logger.error(`❌ Error en intercambio: ${error.message}`);
+      throw error;
+    }
+  }
+
+  /**
+   * Reintegra stock para un INTERCAMBIO de producto
+   * Recibe componentes con pesos específicos: [{ baseId, peso }, ...]
+   */
+  async reintegrarIntercambio(
+    productoSalidaId: number,
+    componentes: Array<{ baseId: number; peso: number }>,
+  ) {
+    this.logger.log(`🔄 Reintegro por intercambio - ProductoSalidaId: ${productoSalidaId}`);
+
+    if (!componentes || componentes.length === 0) {
+      throw new BadRequestException('Se requieren componentes para reintegro');
+    }
+
+    try {
+      const resultado = await this.fifoService.reintegrarIntercambio(
+        productoSalidaId,
+        componentes,
+        undefined,
+      );
+
+      this.logger.log(`✅ Reintegro para intercambio completado`);
+
+      return {
+        mensaje: 'Stock reintegrado para intercambio',
+        productoId: productoSalidaId,
+        cantidadReintegrada: resultado.totalReintegrado,
+        timestamp: new Date(),
+        status: 'SUCCESS'
+      };
+    } catch (error) {
+      this.logger.error(`❌ Error en reintegro: ${error.message}`);
+      throw error;
+    }
+  }
+
   // ========== COMPONENTES ==========
   async addComponenteSubparte(addComponenteSubparteDto: AddComponenteSubparteDto) {
     return this.repository.addComponenteSubparte(addComponenteSubparteDto);
