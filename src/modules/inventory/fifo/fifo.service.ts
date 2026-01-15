@@ -416,4 +416,204 @@ export class FIFOService {
       throw new BadRequestException('Stock insuficiente para la subparte');
     }
   }
+
+  /**
+   * Reintegra inventario para un ProductoSalida (por devolución)
+   * Suma el peso devuelto a los lotes más recientes (LIFO inverso)
+   */
+  async reintegrarProductoSalida(
+    productoSalidaId: number,
+    pesoDevuelto: number,
+    referenciaId?: number,
+  ) {
+    console.log('\n🟡 ========== REINTEGRO DE INVENTARIO (DEVOLUCIÓN) ==========');
+    console.log(`📦 ProductoSalidaId: ${productoSalidaId}`);
+    console.log(`⚖️  Peso a Reintegrar: ${pesoDevuelto} kg`);
+    console.log(`🔗 Referencia (Devolución) ID: ${referenciaId || 'N/A'}`);
+
+    // Obtener componentes del producto
+    const productoSalida = await this.prisma.productoSalida.findUnique({
+      where: { id: productoSalidaId },
+      include: {
+        componentes: true,
+        componentesIndividual: true,
+      },
+    });
+
+    if (!productoSalida) {
+      throw new BadRequestException('Producto de salida no encontrado');
+    }
+
+    console.log(`✅ Producto: "${productoSalida.nombre}"`);
+
+    const subparteBaseIds = productoSalida.componentes.map(
+      (c) => c.subparteBaseId,
+    );
+    const productoBaseIds = productoSalida.componentesIndividual.map(
+      (c) => c.productoBaseId,
+    );
+
+    const totalComponentes = subparteBaseIds.length + productoBaseIds.length;
+    const pesoPorComponente = pesoDevuelto / totalComponentes;
+
+    console.log(`\n📊 Distribuyendo peso entre componentes:`);
+    console.log(`   Total componentes: ${totalComponentes}`);
+    console.log(`   Peso por componente: ${pesoPorComponente.toFixed(3)} kg`);
+
+    const movimientos = [];
+    let totalReintegrado = 0;
+
+    // Reintegrar a SubparteLote (más recientes primero - LIFO)
+    if (subparteBaseIds.length > 0) {
+      console.log(`\n🟡 Reintegrando a SubparteLote...`);
+
+      for (const subparteBaseId of subparteBaseIds) {
+        console.log(`\n   🥩 Procesando SubparteBase ID: ${subparteBaseId}`);
+        console.log(`      Peso a reintegrar: ${pesoPorComponente.toFixed(3)} kg`);
+
+        // Obtener el lote más reciente de este SubparteBase
+        const loteReciente = await this.prisma.subparteLote.findFirst({
+          where: {
+            idSubparteBase: subparteBaseId,
+          },
+          orderBy: { fechaPesado: 'desc' },
+        });
+
+        if (loteReciente) {
+          // Actualizar el peso del lote más reciente
+          const nuevoLote = await this.prisma.subparteLote.update({
+            where: { id: loteReciente.id },
+            data: {
+              pesoSubparteKg: {
+                increment: pesoPorComponente,
+              },
+            },
+          });
+
+          console.log(`      ✅ Reintegrado al lote ${loteReciente.id}`);
+          console.log(`         Peso anterior: ${loteReciente.pesoSubparteKg} kg`);
+          console.log(`         Peso nuevo: ${nuevoLote.pesoSubparteKg} kg`);
+
+          totalReintegrado += pesoPorComponente;
+
+          // Registrar movimiento
+          movimientos.push({
+            tipo: 'DEVOLUCION',
+            subparteLoteId: loteReciente.id,
+            subparteBaseId,
+            peso: pesoPorComponente,
+          });
+        } else {
+          // Si no hay lote, crear uno nuevo
+          console.log(`      ⚠️  No hay lote existente, creando uno nuevo`);
+
+          const nuevoLote = await this.prisma.subparteLote.create({
+            data: {
+              idSubparteBase: subparteBaseId,
+              pesoSubparteKg: pesoPorComponente,
+              fechaPesado: new Date(),
+              idLote: 0, // Lote de reintegro
+            },
+          });
+
+          console.log(`      ✅ Nuevo lote creado: ${nuevoLote.id}`);
+          totalReintegrado += pesoPorComponente;
+
+          movimientos.push({
+            tipo: 'DEVOLUCION',
+            subparteLoteId: nuevoLote.id,
+            subparteBaseId,
+            peso: pesoPorComponente,
+          });
+        }
+      }
+    }
+
+    // Reintegrar a LoteIndividual (más recientes primero - LIFO)
+    if (productoBaseIds.length > 0) {
+      console.log(`\n🟡 Reintegrando a LoteIndividual...`);
+
+      for (const productoBaseId of productoBaseIds) {
+        console.log(`\n   📦 Procesando ProductoBase ID: ${productoBaseId}`);
+        console.log(`      Peso a reintegrar: ${pesoPorComponente.toFixed(3)} kg`);
+
+        // Obtener el lote más reciente de este ProductoBase
+        const loteReciente = await this.prisma.loteIndividual.findFirst({
+          where: {
+            idProductoBase: productoBaseId,
+          },
+          orderBy: { fechaPesado: 'desc' },
+        });
+
+        if (loteReciente) {
+          // Actualizar el peso del lote más reciente
+          const nuevoLote = await this.prisma.loteIndividual.update({
+            where: { id: loteReciente.id },
+            data: {
+              pesoKg: {
+                increment: pesoPorComponente,
+              },
+            },
+          });
+
+          console.log(`      ✅ Reintegrado al lote ${loteReciente.id}`);
+          console.log(`         Peso anterior: ${loteReciente.pesoKg} kg`);
+          console.log(`         Peso nuevo: ${nuevoLote.pesoKg} kg`);
+
+          totalReintegrado += pesoPorComponente;
+
+          movimientos.push({
+            tipo: 'DEVOLUCION',
+            loteIndividualId: loteReciente.id,
+            productoBaseId,
+            peso: pesoPorComponente,
+          });
+        } else {
+          // Si no hay lote, crear uno nuevo
+          console.log(`      ⚠️  No hay lote existente, creando uno nuevo`);
+
+          const nuevoLote = await this.prisma.loteIndividual.create({
+            data: {
+              idProductoBase: productoBaseId,
+              pesoKg: pesoPorComponente,
+              fechaPesado: new Date(),
+              idLote: 0, // Lote de reintegro
+            },
+          });
+
+          console.log(`      ✅ Nuevo lote creado: ${nuevoLote.id}`);
+          totalReintegrado += pesoPorComponente;
+
+          movimientos.push({
+            tipo: 'DEVOLUCION',
+            loteIndividualId: nuevoLote.id,
+            productoBaseId,
+            peso: pesoPorComponente,
+          });
+        }
+      }
+    }
+
+    // Registrar movimientos en BD
+    for (const mov of movimientos) {
+      await this.prisma.movimientoInventario.create({
+        data: {
+          tipo: 'DEVOLUCION',
+          referenciaId,
+          ...mov,
+        },
+      });
+    }
+
+    console.log(`\n✅ Reintegro completado`);
+    console.log(`   Total reintegrado: ${totalReintegrado.toFixed(3)} kg`);
+    console.log('🟡 ========== FIN REINTEGRO ==========\n');
+
+    return {
+      success: true,
+      message: 'Inventario reintegrado correctamente',
+      totalReintegrado,
+      movimientos: movimientos.length,
+    };
+  }
 }

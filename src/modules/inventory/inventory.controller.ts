@@ -17,4 +17,9 @@ export class InventoryController {
   validateStock(@Body() dto: ValidateStockDto) {
     return this.inventoryService.validateStock(dto);
   }
+
+  @Post('reintegrar-producto')
+  reintegrarProducto(@Body() dto: ConsumeProductoSalidaDto) {
+    return this.inventoryService.reintegrarProductoSalida(dto);
+  }
 }

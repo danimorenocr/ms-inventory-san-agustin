@@ -24,6 +24,18 @@ export class InventoryService {
   }
 
   /**
+   * Reintegra inventario para un ProductoSalida (devoluciones)
+   * Suma el peso devuelto nuevamente a los lotes
+   */
+  async reintegrarProductoSalida(dto: ConsumeProductoSalidaDto) {
+    return await this.fifo.reintegrarProductoSalida(
+      dto.productoSalidaId,
+      dto.pesoTotal,
+      dto.referenciaVentaId,
+    );
+  }
+
+  /**
    * Valida si hay stock suficiente para un ProductoSalida
    * Considera tanto SubparteLote como LoteIndividual
    */
