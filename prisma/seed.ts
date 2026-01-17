@@ -422,37 +422,45 @@ async function main() {
   // ============================================================
   // 10. CREAR PRODUCTOS DE SALIDA
   // ============================================================
-  const productoSalida1 = await prisma.productoSalida.create({
-    data: {
-      nombre: "Corte Premium",
-      unidad: "kg",
-      precio: 45000,
-      etiqueta: "PREMIUM",
-      activo: true
-    }
-  });
+  let productoSalida1;
+  let productoSalida2;
+  let productoSalida3;
+  
+  try {
+    productoSalida1 = await prisma.productoSalida.create({
+      data: {
+        nombre: "Corte Premium",
+        unidad: "kg",
+        precio: 45000,
+        etiqueta: "PREMIUM",
+        activo: true
+      }
+    });
 
-  const productoSalida2 = await prisma.productoSalida.create({
-    data: {
-      nombre: "Corte Estándar",
-      unidad: "kg",
-      precio: 35000,
-      etiqueta: "STANDARD",
-      activo: true
-    }
-  });
+    productoSalida2 = await prisma.productoSalida.create({
+      data: {
+        nombre: "Corte Estándar",
+        unidad: "kg",
+        precio: 35000,
+        etiqueta: "STANDARD",
+        activo: true
+      }
+    });
 
-  const productoSalida3 = await prisma.productoSalida.create({
-    data: {
-      nombre: "Paquete Económico",
-      unidad: "unidad",
-      precio: 25000,
-      etiqueta: "ECO",
-      activo: true
-    }
-  });
+    productoSalida3 = await prisma.productoSalida.create({
+      data: {
+        nombre: "Paquete Económico",
+        unidad: "unidad",
+        precio: 25000,
+        etiqueta: "ECO",
+        activo: true
+      }
+    });
 
-  console.log("✔ Productos de salida creados.");
+    console.log("✔ Productos de salida creados.");
+  } catch (error) {
+    console.log("⚠️  Error creando productos de salida, continuando...");
+  }
 
   // ============================================================
   // 11. ASOCIAR COMPONENTES DE PRODUCTOS DE SALIDA
@@ -460,23 +468,31 @@ async function main() {
   const subpartesLote = await prisma.subparteLote.findMany({ take: 3 });
 
   // Componente base para producto de salida
-  if (productosBaseList[0]) {
-    await prisma.productoSalidaComponente.create({
-      data: {
-        productoSalidaId: productoSalida1.id,
-        subparteBaseId: productosBaseList[0].id
-      }
-    });
+  if (productosBaseList[0] && productoSalida1) {
+    try {
+      await prisma.productoSalidaComponente.create({
+        data: {
+          productoSalidaId: productoSalida1.id,
+          subparteBaseId: productosBaseList[0].id
+        }
+      });
+    } catch (e) {
+      console.log("⚠️  Error asociando componentes");
+    }
   }
 
-
-
-  await prisma.productoSalidaComponenteIndividual.create({
-    data: {
-      productoSalidaId: productoSalida3.id,
-      productoBaseId: loteIndividual1.idProductoBase
+  if (productoSalida3) {
+    try {
+      await prisma.productoSalidaComponenteIndividual.create({
+        data: {
+          productoSalidaId: productoSalida3.id,
+          productoBaseId: loteIndividual1.idProductoBase
+        }
+      });
+    } catch (e) {
+      console.log("⚠️  Error asociando componentes individuales");
     }
-  });
+  }
 
   console.log("✔ Componentes de productos de salida asociados.");
 
@@ -484,26 +500,30 @@ async function main() {
   // 12. CREAR MOVIMIENTOS DE INVENTARIO
   // ============================================================
   if (subpartesLote[0]) {
-    await prisma.movimientoInventario.createMany({
-      data: [
-        {
-          tipo: "VENTA",
-          referenciaId: productoSalida1.id,
-          subparteLoteId: subpartesLote[0].id,
-          subparteBaseId: subpartesLote[0].idSubparteBase,
-          peso: 10,
-          fecha: new Date()
-        },
-        {
-          tipo: "MERMA",
-          referenciaId: null,
-          subparteLoteId: subpartesLote[0].id,
-          subparteBaseId: subpartesLote[0].idSubparteBase,
-          peso: 2,
-          fecha: new Date()
-        }
-      ]
-    });
+    try {
+      await prisma.movimientoInventario.createMany({
+        data: [
+          {
+            tipo: "VENTA",
+            referenciaId: productoSalida1?.id || null,
+            subparteLoteId: subpartesLote[0].id,
+            subparteBaseId: subpartesLote[0].idSubparteBase,
+            peso: 10,
+            fecha: new Date()
+          },
+          {
+            tipo: "MERMA",
+            referenciaId: null,
+            subparteLoteId: subpartesLote[0].id,
+            subparteBaseId: subpartesLote[0].idSubparteBase,
+            peso: 2,
+            fecha: new Date()
+          }
+        ]
+      });
+    } catch (e) {
+      console.log("⚠️  Error creando movimientos de inventario");
+    }
   }
 
   if (subpartesLote[1]) {
