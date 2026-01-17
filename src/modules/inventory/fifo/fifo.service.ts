@@ -36,13 +36,13 @@ export class FIFOService {
 
     // Verificar si hay componentes especificados
     const tieneComponentesEspecificados = componentes && componentes.length > 0;
-    
+
     if (tieneComponentesEspecificados) {
       console.log(`\n📋 Componentes ESPECIFICADOS (cliente define pesos exactos):`);
       componentes.forEach((c, i) => {
         console.log(`   ${i + 1}. BaseId: ${c.baseId} | Peso: ${c.peso} kg`);
       });
-      
+
       const sumaPesos = componentes.reduce((sum, c) => sum + c.peso, 0);
       console.log(`   ✅ Suma total: ${sumaPesos.toFixed(3)} kg`);
     }
@@ -69,7 +69,7 @@ export class FIFOService {
     // SI HAY COMPONENTES ESPECIFICADOS: Descontar exactamente esos pesos
     if (tieneComponentesEspecificados) {
       console.log(`\n2️⃣ Descontando con pesos ESPECÍFICOS del cliente...`);
-      
+
       for (const componente of componentes) {
         const { baseId, peso } = componente;
         console.log(`\n   🔄 Procesando BaseId: ${baseId} | Peso a descontar: ${peso.toFixed(3)} kg`);
@@ -102,7 +102,7 @@ export class FIFOService {
           // Descontar de LoteIndividual
           console.log(`      Stock en LoteIndividual: ${lotesIndividual.length} lote(s)`);
           let restante = peso;
-          
+
           for (const lote of lotesIndividual) {
             if (restante <= 0) break;
 
@@ -167,7 +167,7 @@ export class FIFOService {
     } else {
       // SI NO hay componentes especificados: Usar el flujo original (dividir peso)
       console.log('\n2️⃣ Componentes NO especificados. Dividiendo peso entre componentes...');
-      
+
       const subparteBaseIds = productoSalida.componentes.map(
         (c) => c.subparteBaseId,
       );
@@ -190,118 +190,118 @@ export class FIFOService {
       console.log(`   Total componentes: ${totalComponentes}`);
       console.log(`   Peso por componente: ${pesoPorComponente.toFixed(3)} kg`);
 
-    let totalDescontado = 0;
-    let totalItemsDescontados = 0;
 
-    // 3️⃣ Descontar de SubparteLote (por cada SubparteBase)
-    if (subparteBaseIds.length > 0) {
-      console.log(`\n3️⃣ Descontando de SubparteLote...`);
 
-      for (const subparteBaseId of subparteBaseIds) {
-        console.log(`\n   🥩 Procesando SubparteBase ID: ${subparteBaseId}`);
-        console.log(`      Peso a descontar: ${pesoPorComponente.toFixed(3)} kg`);
+      // 3️⃣ Descontar de SubparteLote (por cada SubparteBase)
+      if (subparteBaseIds.length > 0) {
+        console.log(`\n3️⃣ Descontando de SubparteLote...`);
 
-        // Buscar stock disponible para este SubparteBase específico
-        const subpartesLote = await this.prisma.subparteLote.findMany({
-          where: {
-            idSubparteBase: subparteBaseId,
-            pesoSubparteKg: { gt: 0 },
-          },
-          orderBy: { fechaPesado: 'asc' }, // FIFO
-        });
+        for (const subparteBaseId of subparteBaseIds) {
+          console.log(`\n   🥩 Procesando SubparteBase ID: ${subparteBaseId}`);
+          console.log(`      Peso a descontar: ${pesoPorComponente.toFixed(3)} kg`);
 
-        console.log(`      Stock encontrado: ${subpartesLote.length} lote(s)`);
-        subpartesLote.forEach((s, i) => {
-          console.log(`         ${i + 1}. ID: ${s.id} | Peso: ${s.pesoSubparteKg} kg | Fecha: ${s.fechaPesado.toISOString()}`);
-        });
-
-        // Aplicar FIFO para este componente
-        let restante = pesoPorComponente;
-        for (const subparte of subpartesLote) {
-          if (restante <= 0) break;
-
-          const consumir = Math.min(subparte.pesoSubparteKg, restante);
-
-          console.log(`      🔄 Descontando ${consumir.toFixed(3)} kg de SubparteLote ID: ${subparte.id}`);
-
-          await this.prisma.subparteLote.update({
-            where: { id: subparte.id },
-            data: { pesoSubparteKg: { decrement: consumir } },
-          });
-
-          await this.prisma.movimientoInventario.create({
-            data: {
-              tipo: 'VENTA',
-              referenciaId,
-              subparteLoteId: subparte.id,
-              subparteBaseId: subparteBaseId,
-              peso: consumir,
+          // Buscar stock disponible para este SubparteBase específico
+          const subpartesLote = await this.prisma.subparteLote.findMany({
+            where: {
+              idSubparteBase: subparteBaseId,
+              pesoSubparteKg: { gt: 0 },
             },
+            orderBy: { fechaPesado: 'asc' }, // FIFO
           });
 
-          restante -= consumir;
-          totalDescontado += consumir;
-          totalItemsDescontados++;
+          console.log(`      Stock encontrado: ${subpartesLote.length} lote(s)`);
+          subpartesLote.forEach((s, i) => {
+            console.log(`         ${i + 1}. ID: ${s.id} | Peso: ${s.pesoSubparteKg} kg | Fecha: ${s.fechaPesado.toISOString()}`);
+          });
 
-          console.log(`         ✅ Descontado. Restante: ${restante.toFixed(3)} kg`);
-        }
+          // Aplicar FIFO para este componente
+          let restante = pesoPorComponente;
+          for (const subparte of subpartesLote) {
+            if (restante <= 0) break;
 
-        if (restante > 0) {
-          throw new BadRequestException(
-            `Stock insuficiente para SubparteBase ID ${subparteBaseId}. Faltan ${restante.toFixed(2)} kg`,
-          );
+            const consumir = Math.min(subparte.pesoSubparteKg, restante);
+
+            console.log(`      🔄 Descontando ${consumir.toFixed(3)} kg de SubparteLote ID: ${subparte.id}`);
+
+            await this.prisma.subparteLote.update({
+              where: { id: subparte.id },
+              data: { pesoSubparteKg: { decrement: consumir } },
+            });
+
+            await this.prisma.movimientoInventario.create({
+              data: {
+                tipo: 'VENTA',
+                referenciaId,
+                subparteLoteId: subparte.id,
+                subparteBaseId: subparteBaseId,
+                peso: consumir,
+              },
+            });
+
+            restante -= consumir;
+            totalDescontado += consumir;
+            totalItemsDescontados++;
+
+            console.log(`         ✅ Descontado. Restante: ${restante.toFixed(3)} kg`);
+          }
+
+          if (restante > 0) {
+            throw new BadRequestException(
+              `Stock insuficiente para SubparteBase ID ${subparteBaseId}. Faltan ${restante.toFixed(2)} kg`,
+            );
+          }
         }
       }
-    }
 
-    // 4️⃣ Descontar de LoteIndividual (por cada ProductoBase)
-    if (productoBaseIds.length > 0) {
-      console.log(`\n4️⃣ Descontando de LoteIndividual...`);
+      // 4️⃣ Descontar de LoteIndividual (por cada ProductoBase)
+      if (productoBaseIds.length > 0) {
+        console.log(`\n4️⃣ Descontando de LoteIndividual...`);
 
-      for (const productoBaseId of productoBaseIds) {
-        console.log(`\n   🛒 Procesando ProductoBase ID: ${productoBaseId}`);
-        console.log(`      Peso a descontar: ${pesoPorComponente.toFixed(3)} kg`);
+        for (const productoBaseId of productoBaseIds) {
+          console.log(`\n   🛒 Procesando ProductoBase ID: ${productoBaseId}`);
+          console.log(`      Peso a descontar: ${pesoPorComponente.toFixed(3)} kg`);
 
-        // Buscar stock disponible para este ProductoBase específico
-        const lotesIndividual = await this.prisma.loteIndividual.findMany({
-          where: {
-            idProductoBase: productoBaseId,
-            pesoKg: { gt: 0 },
-          },
-          orderBy: { fechaRegistro: 'asc' }, // FIFO
-        });
-
-        console.log(`      Stock encontrado: ${lotesIndividual.length} lote(s)`);
-        lotesIndividual.forEach((l, i) => {
-          console.log(`         ${i + 1}. ID: ${l.idLote} | Peso: ${l.pesoKg} kg | Fecha: ${l.fechaRegistro.toISOString()}`);
-        });
-
-        // Aplicar FIFO para este componente
-        let restante = pesoPorComponente;
-        for (const lote of lotesIndividual) {
-          if (restante <= 0) break;
-
-          const consumir = Math.min(lote.pesoKg, restante);
-
-          console.log(`      🔄 Descontando ${consumir.toFixed(3)} kg de LoteIndividual ID: ${lote.idLote}`);
-
-          await this.prisma.loteIndividual.update({
-            where: { idLote: lote.idLote },
-            data: { pesoKg: { decrement: consumir } },
+          // Buscar stock disponible para este ProductoBase específico
+          const lotesIndividual = await this.prisma.loteIndividual.findMany({
+            where: {
+              idProductoBase: productoBaseId,
+              pesoKg: { gt: 0 },
+            },
+            orderBy: { fechaRegistro: 'asc' }, // FIFO
           });
 
-          restante -= consumir;
-          totalDescontado += consumir;
-          totalItemsDescontados++;
+          console.log(`      Stock encontrado: ${lotesIndividual.length} lote(s)`);
+          lotesIndividual.forEach((l, i) => {
+            console.log(`         ${i + 1}. ID: ${l.idLote} | Peso: ${l.pesoKg} kg | Fecha: ${l.fechaRegistro.toISOString()}`);
+          });
 
-          console.log(`         ✅ Descontado. Restante: ${restante.toFixed(3)} kg`);
-          console.log(`         ⚠️  Movimiento NO registrado (TODO: crear tabla MovimientoInventarioIndividual)`);
-        }
+          // Aplicar FIFO para este componente
+          let restante = pesoPorComponente;
+          for (const lote of lotesIndividual) {
+            if (restante <= 0) break;
 
-        if (restante > 0) {
-          throw new BadRequestException(
-            `Stock insuficiente para ProductoBase ID ${productoBaseId}. Faltan ${restante.toFixed(2)} kg`,
-          );
+            const consumir = Math.min(lote.pesoKg, restante);
+
+            console.log(`      🔄 Descontando ${consumir.toFixed(3)} kg de LoteIndividual ID: ${lote.idLote}`);
+
+            await this.prisma.loteIndividual.update({
+              where: { idLote: lote.idLote },
+              data: { pesoKg: { decrement: consumir } },
+            });
+
+            restante -= consumir;
+            totalDescontado += consumir;
+            totalItemsDescontados++;
+
+            console.log(`         ✅ Descontado. Restante: ${restante.toFixed(3)} kg`);
+            console.log(`         ⚠️  Movimiento NO registrado (TODO: crear tabla MovimientoInventarioIndividual)`);
+          }
+
+          if (restante > 0) {
+            throw new BadRequestException(
+              `Stock insuficiente para ProductoBase ID ${productoBaseId}. Faltan ${restante.toFixed(2)} kg`,
+            );
+          }
         }
       }
     }
@@ -319,6 +319,7 @@ export class FIFOService {
       productoNombre: productoSalida.nombre,
       itemsDescontados: totalItemsDescontados,
     };
+
   }
 
   /**
@@ -988,3 +989,4 @@ export class FIFOService {
       totalReintegrado,
     };
   }
+}
