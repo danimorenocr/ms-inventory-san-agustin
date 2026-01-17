@@ -765,27 +765,12 @@ export class FIFOService {
             peso: pesoPorComponente,
           });
         } else {
-          // Si no hay lote, crear uno nuevo
-          console.log(`      ⚠️  No hay lote existente, creando uno nuevo`);
-
-          const nuevoLote = await this.prisma.subparteLote.create({
-            data: {
-              idSubparteBase: subparteBaseId,
-              pesoSubparteKg: pesoPorComponente,
-              fechaPesado: new Date(),
-              idLote: 0, // Lote de reintegro
-            },
-          });
-
-          console.log(`      ✅ Nuevo lote creado: ${nuevoLote.id}`);
-          totalReintegrado += pesoPorComponente;
-
-          movimientos.push({
-            tipo: 'DEVOLUCION',
-            subparteLoteId: nuevoLote.id,
-            subparteBaseId,
-            peso: pesoPorComponente,
-          });
+          // Si no hay lote existente, lanzar error
+          console.log(`      ❌ No hay lote existente para SubparteBase ID: ${subparteBaseId}`);
+          throw new BadRequestException(
+            `No se puede reintegrar: no existe un lote para la subparte ID ${subparteBaseId}. ` +
+            `El producto debe haber sido vendido previamente para poder reintegrar stock.`
+          );
         }
       }
     }
@@ -803,13 +788,13 @@ export class FIFOService {
           where: {
             idProductoBase: productoBaseId,
           },
-          orderBy: { fechaPesado: 'desc' },
+          orderBy: { fechaRegistro: 'desc' },
         });
 
         if (loteReciente) {
           // Actualizar el peso del lote más reciente
           const nuevoLote = await this.prisma.loteIndividual.update({
-            where: { id: loteReciente.id },
+            where: { idLote: loteReciente.idLote },
             data: {
               pesoKg: {
                 increment: pesoPorComponente,
@@ -817,7 +802,7 @@ export class FIFOService {
             },
           });
 
-          console.log(`      ✅ Reintegrado al lote ${loteReciente.id}`);
+          console.log(`      ✅ Reintegrado al lote ${loteReciente.idLote}`);
           console.log(`         Peso anterior: ${loteReciente.pesoKg} kg`);
           console.log(`         Peso nuevo: ${nuevoLote.pesoKg} kg`);
 
@@ -825,45 +810,38 @@ export class FIFOService {
 
           movimientos.push({
             tipo: 'DEVOLUCION',
-            loteIndividualId: loteReciente.id,
+            loteIndividualId: loteReciente.idLote,
             productoBaseId,
             peso: pesoPorComponente,
           });
         } else {
-          // Si no hay lote, crear uno nuevo
-          console.log(`      ⚠️  No hay lote existente, creando uno nuevo`);
-
-          const nuevoLote = await this.prisma.loteIndividual.create({
-            data: {
-              idProductoBase: productoBaseId,
-              pesoKg: pesoPorComponente,
-              fechaPesado: new Date(),
-              idLote: 0, // Lote de reintegro
-            },
-          });
-
-          console.log(`      ✅ Nuevo lote creado: ${nuevoLote.id}`);
-          totalReintegrado += pesoPorComponente;
-
-          movimientos.push({
-            tipo: 'DEVOLUCION',
-            loteIndividualId: nuevoLote.id,
-            productoBaseId,
-            peso: pesoPorComponente,
-          });
+          // Si no hay lote existente, lanzar error
+          console.log(`      ❌ No hay lote existente para ProductoBase ID: ${productoBaseId}`);
+          throw new BadRequestException(
+            `No se puede reintegrar: no existe un lote para el producto base ID ${productoBaseId}. ` +
+            `El producto debe haber sido vendido previamente para poder reintegrar stock.`
+          );
         }
       }
     }
 
-    // Registrar movimientos en BD
+    // Registrar movimientos en BD (solo para SubparteLote)
+    // TODO: Crear tabla MovimientoInventarioIndividual para LoteIndividual
     for (const mov of movimientos) {
-      await this.prisma.movimientoInventario.create({
-        data: {
-          tipo: 'DEVOLUCION',
-          referenciaId,
-          ...mov,
-        },
-      });
+      // Solo registrar movimientos de SubparteLote
+      if (mov.subparteLoteId) {
+        await this.prisma.movimientoInventario.create({
+          data: {
+            tipo: 'DEVOLUCION',
+            referenciaId,
+            subparteLoteId: mov.subparteLoteId,
+            subparteBaseId: mov.subparteBaseId,
+            peso: mov.peso,
+          },
+        });
+      } else {
+        console.log(`      ⚠️  Movimiento de LoteIndividual no registrado (TODO: crear tabla)`);
+      }
     }
 
     console.log(`\n✅ Reintegro completado`);
@@ -962,19 +940,12 @@ export class FIFOService {
           totalReintegrado += peso;
           console.log(`      ✅ Reintegrado: ${peso.toFixed(3)} kg`);
         } else {
-          // Crear nuevo lote
-          console.log(`   ⚠️  Creando nuevo LoteIndividual para BaseId: ${baseId}`);
-          const nuevoLote = await this.prisma.loteIndividual.create({
-            data: {
-              idProductoBase: baseId,
-              pesoKg: peso,
-              fechaRegistro: new Date(),
-              idLote: 0,
-            },
-          });
-
-          totalReintegrado += peso;
-          console.log(`      ✅ Nuevo lote creado con ${peso.toFixed(3)} kg`);
+          // Si no hay lote existente, lanzar error
+          console.log(`   ❌ No hay lote existente para BaseId: ${baseId}`);
+          throw new BadRequestException(
+            `No se puede reintegrar: no existe un lote para el base ID ${baseId}. ` +
+            `El producto debe haber sido vendido previamente para poder reintegrar stock.`
+          );
         }
       }
     }

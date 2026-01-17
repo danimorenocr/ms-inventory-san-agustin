@@ -20,6 +20,9 @@ export class InventoryController {
 
   @Post('reintegrar-producto')
   reintegrarProducto(@Body() dto: ConsumeProductoSalidaDto) {
+    console.log('🔍 CONTROLLER - Body recibido:', JSON.stringify(dto, null, 2));
+    console.log('🔍 CONTROLLER - Tipo de dto:', typeof dto);
+    console.log('🔍 CONTROLLER - Keys del dto:', Object.keys(dto));
     return this.inventoryService.reintegrarProductoSalida(dto);
   }
 }

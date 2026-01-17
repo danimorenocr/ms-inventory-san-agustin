@@ -28,6 +28,11 @@ export class InventoryService {
    * Suma el peso devuelto nuevamente a los lotes
    */
   async reintegrarProductoSalida(dto: ConsumeProductoSalidaDto) {
+    console.log('🔍 DEBUG - DTO recibido en reintegrarProductoSalida:', JSON.stringify(dto, null, 2));
+    console.log('🔍 DEBUG - productoSalidaId:', dto.productoSalidaId);
+    console.log('🔍 DEBUG - pesoTotal:', dto.pesoTotal);
+    console.log('🔍 DEBUG - referenciaVentaId:', dto.referenciaVentaId);
+
     return await this.fifo.reintegrarProductoSalida(
       dto.productoSalidaId,
       dto.pesoTotal,
