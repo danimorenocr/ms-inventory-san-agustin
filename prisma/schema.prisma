@@ -45,7 +45,6 @@ model ProductoSalida {
   activo Boolean @default(true)
 
   componentes            ProductoSalidaComponente[]
-
   componentesIndividual  ProductoSalidaComponenteIndividual[]
 }
 
