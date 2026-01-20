@@ -502,104 +502,157 @@ export class FIFOService {
       const pesoKg = componente.weight;
       const baseProductId = componente.baseProductId;
       const componentName = componente.name || 'Componente';
+      const componentType = componente.type; // 'producto_base' o 'subparte'
 
       console.log(`\n🔹 Procesando componente: ${componentName}`);
       console.log(`   BaseProductId: ${baseProductId}`);
+      console.log(`   Tipo: ${componentType || 'no especificado'}`);
       console.log(`   Peso requerido: ${pesoKg.toFixed(3)} kg`);
 
       let restante = pesoKg;
 
-      // PASO 1: Buscar en SubparteLote (desposte)
-      const subpartesLote = await this.prisma.subparteLote.findMany({
-        where: {
-          idSubparteBase: baseProductId,
-          pesoSubparteKg: { gt: 0 },
-        },
-        orderBy: { fechaPesado: 'asc' }, // FIFO
-      });
+      // Decidir dónde buscar según el tipo de componente
+      if (componentType === 'producto_base') {
+        // ============ COMPONENTE TIPO PRODUCTO_BASE ============
+        // Solo buscar en LoteIndividual (compras individuales)
+        console.log(`   📌 Componente tipo producto_base, buscando SOLO en LoteIndividual`);
 
-      if (subpartesLote.length > 0) {
-        console.log(`   🥩 SubparteLote encontrado: ${subpartesLote.length} lote(s)`);
-
-        for (const subparte of subpartesLote) {
-          if (restante <= 0) break;
-
-          const consumir = Math.min(subparte.pesoSubparteKg, restante);
-
-          console.log(`      🔄 Descontando ${consumir.toFixed(3)} kg de SubparteLote ID: ${subparte.id}`);
-
-          await this.prisma.subparteLote.update({
-            where: { id: subparte.id },
-            data: { pesoSubparteKg: { decrement: consumir } },
-          });
-
-          await this.prisma.movimientoInventario.create({
-            data: {
-              tipo: 'VENTA',
-              referenciaId,
-              subparteLoteId: subparte.id,
-              subparteBaseId: baseProductId,
-              peso: consumir,
-            },
-          });
-
-          restante -= consumir;
-          totalDescontado += consumir;
-          totalItemsDescontados++;
-
-          console.log(`         ✅ Descontado. Restante: ${restante.toFixed(3)} kg`);
-        }
-      }
-
-      // PASO 2: Si aún falta peso, buscar en LoteIndividual (compras individuales)
-      if (restante > 0) {
-        // Buscar ProductoBase con el mismo nombre que el SubparteBase
-        const subparteBase = await this.prisma.subparteBase.findUnique({
-          where: { id: baseProductId },
+        const lotesIndividual = await this.prisma.loteIndividual.findMany({
+          where: {
+            idProductoBase: baseProductId,
+            pesoKg: { gt: 0 },
+          },
+          orderBy: { fechaRegistro: 'asc' }, // FIFO
         });
 
-        if (subparteBase) {
-          // Buscar ProductoBase con el mismo nombre
-          const productoBase = await this.prisma.productoBase.findFirst({
-            where: {
-              nombre: {
-                equals: subparteBase.nombre,
-                mode: 'insensitive',
-              },
-            },
-          });
+        if (lotesIndividual.length > 0) {
+          console.log(`   🛒 LoteIndividual encontrado: ${lotesIndividual.length} lote(s)`);
 
-          if (productoBase) {
-            const lotesIndividual = await this.prisma.loteIndividual.findMany({
-              where: {
-                idProductoBase: productoBase.id,
-                pesoKg: { gt: 0 },
-              },
-              orderBy: { fechaRegistro: 'asc' }, // FIFO
+          for (const lote of lotesIndividual) {
+            if (restante <= 0) break;
+
+            const consumir = Math.min(lote.pesoKg, restante);
+
+            console.log(`      🔄 Descontando ${consumir.toFixed(3)} kg de LoteIndividual ID: ${lote.idLote}`);
+
+            await this.prisma.loteIndividual.update({
+              where: { idLote: lote.idLote },
+              data: { pesoKg: { decrement: consumir } },
             });
 
-            if (lotesIndividual.length > 0) {
-              console.log(`   🛒 LoteIndividual encontrado: ${lotesIndividual.length} lote(s) (ProductoBase ID: ${productoBase.id})`);
+            // TODO: Crear MovimientoInventarioIndividual
 
-              for (const lote of lotesIndividual) {
-                if (restante <= 0) break;
+            restante -= consumir;
+            totalDescontado += consumir;
+            totalItemsDescontados++;
 
-                const consumir = Math.min(lote.pesoKg, restante);
+            console.log(`         ✅ Descontado. Restante: ${restante.toFixed(3)} kg`);
+          }
+        } else {
+          console.log(`   ⚠️  No se encontró stock en LoteIndividual para ProductoBase ID: ${baseProductId}`);
+        }
+      } else {
+        // ============ COMPONENTE TIPO SUBPARTE (o no especificado) ============
+        // PASO 1: Buscar primero en SubparteLote (desposte)
+        console.log(`   📌 Componente tipo subparte, buscando en SubparteLote`);
 
-                console.log(`      🔄 Descontando ${consumir.toFixed(3)} kg de LoteIndividual ID: ${lote.idLote}`);
+        const subpartesLote = await this.prisma.subparteLote.findMany({
+          where: {
+            idSubparteBase: baseProductId,
+            pesoSubparteKg: { gt: 0 },
+          },
+          orderBy: { fechaPesado: 'asc' }, // FIFO
+        });
 
-                await this.prisma.loteIndividual.update({
-                  where: { idLote: lote.idLote },
-                  data: { pesoKg: { decrement: consumir } },
-                });
+        if (subpartesLote.length > 0) {
+          console.log(`   🥩 SubparteLote encontrado: ${subpartesLote.length} lote(s)`);
 
-                // TODO: Crear MovimientoInventarioIndividual
+          for (const subparte of subpartesLote) {
+            if (restante <= 0) break;
 
-                restante -= consumir;
-                totalDescontado += consumir;
-                totalItemsDescontados++;
+            const consumir = Math.min(subparte.pesoSubparteKg, restante);
 
-                console.log(`         ✅ Descontado. Restante: ${restante.toFixed(3)} kg`);
+            console.log(`      🔄 Descontando ${consumir.toFixed(3)} kg de SubparteLote ID: ${subparte.id}`);
+
+            await this.prisma.subparteLote.update({
+              where: { id: subparte.id },
+              data: { pesoSubparteKg: { decrement: consumir } },
+            });
+
+            await this.prisma.movimientoInventario.create({
+              data: {
+                tipo: 'VENTA',
+                referenciaId,
+                subparteLoteId: subparte.id,
+                subparteBaseId: baseProductId,
+                peso: consumir,
+              },
+            });
+
+            restante -= consumir;
+            totalDescontado += consumir;
+            totalItemsDescontados++;
+
+            console.log(`         ✅ Descontado. Restante: ${restante.toFixed(3)} kg`);
+          }
+        }
+
+        // PASO 2: Si aún falta peso, buscar en LoteIndividual (compras individuales)
+        if (restante > 0) {
+          console.log(`   📌 Buscando en LoteIndividual como fallback`);
+
+          // Buscar ProductoBase con el mismo nombre que el SubparteBase
+          const subparteBase = await this.prisma.subparteBase.findUnique({
+            where: { id: baseProductId },
+          });
+
+          if (subparteBase) {
+            // Buscar ProductoBase con el mismo nombre
+            const productoBase = await this.prisma.productoBase.findFirst({
+              where: {
+                nombre: {
+                  equals: subparteBase.nombre,
+                  mode: 'insensitive',
+                },
+              },
+            });
+
+            if (productoBase) {
+              console.log(`   📌 Encontrado ProductoBase ID: ${productoBase.id} con nombre: ${productoBase.nombre}`);
+
+              const lotesIndividual = await this.prisma.loteIndividual.findMany({
+                where: {
+                  idProductoBase: productoBase.id,
+                  pesoKg: { gt: 0 },
+                },
+                orderBy: { fechaRegistro: 'asc' }, // FIFO
+              });
+
+              if (lotesIndividual.length > 0) {
+                console.log(`   🛒 LoteIndividual encontrado: ${lotesIndividual.length} lote(s)`);
+
+                for (const lote of lotesIndividual) {
+                  if (restante <= 0) break;
+
+                  const consumir = Math.min(lote.pesoKg, restante);
+
+                  console.log(`      🔄 Descontando ${consumir.toFixed(3)} kg de LoteIndividual ID: ${lote.idLote}`);
+
+                  await this.prisma.loteIndividual.update({
+                    where: { idLote: lote.idLote },
+                    data: { pesoKg: { decrement: consumir } },
+                  });
+
+                  // TODO: Crear MovimientoInventarioIndividual
+
+                  restante -= consumir;
+                  totalDescontado += consumir;
+                  totalItemsDescontados++;
+
+                  console.log(`         ✅ Descontado. Restante: ${restante.toFixed(3)} kg`);
+                }
+              } else {
+                console.log(`   ⚠️  No se encontró stock en LoteIndividual para ProductoBase ID: ${productoBase.id}`);
               }
             }
           }
