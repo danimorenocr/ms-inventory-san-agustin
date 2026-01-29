@@ -498,11 +498,13 @@ export class FIFOService {
     for (const componente of componentes) {
       console.log(`\n🔍 DEBUG - Componente recibido:`, JSON.stringify(componente, null, 2));
 
-      // El POS ya envía el peso en kilogramos
-      const pesoKg = componente.weight;
-      const baseProductId = componente.baseProductId;
+      // Soportar ambos formatos:
+      // Formato nuevo (desde VentaComponentePeso): { subparteBaseId, pesoComponenteKg }
+      // Formato antiguo (legacy): { baseProductId, weight, type, name }
+      const pesoKg = componente.pesoComponenteKg || componente.weight;
+      const baseProductId = componente.subparteBaseId || componente.baseProductId;
       const componentName = componente.name || 'Componente';
-      const componentType = componente.type; // 'producto_base' o 'subparte'
+      const componentType = componente.type; // 'producto_base' o 'subparte' (solo en formato antiguo)
 
       console.log(`\n🔹 Procesando componente: ${componentName}`);
       console.log(`   BaseProductId: ${baseProductId}`);

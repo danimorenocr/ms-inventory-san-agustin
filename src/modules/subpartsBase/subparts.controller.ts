@@ -17,7 +17,7 @@ import { UpdatesubpartDto } from './dto/update-subpart.dto';
 @ApiTags('Subpartes Base')
 @Controller('subparts-base')
 export class SubpartsController {
-  constructor(private readonly subpartsService: SubpartsService) {}
+  constructor(private readonly subpartsService: SubpartsService) { }
 
   @Post()
   @ApiOperation({ summary: 'Crear una nueva subparte base' })
@@ -36,6 +36,19 @@ export class SubpartsController {
       return this.subpartsService.findByTipoAnimal(tipoAnimal);
     }
     return this.subpartsService.findAll();
+  }
+
+  // IMPORTANTE: Esta ruta debe estar ANTES de @Get(':id') para que funcione
+  @Get('bulk')
+  @ApiOperation({ summary: 'Obtener múltiples subpartes por IDs' })
+  @ApiQuery({ name: 'ids', description: 'IDs separados por comas', example: '1,2,3' })
+  @ApiResponse({ status: 200, description: 'Lista de subpartes encontradas' })
+  findByIds(@Query('ids') ids: string) {
+    if (!ids) {
+      return [];
+    }
+    const idArray = ids.split(',').map(id => parseInt(id.trim())).filter(id => !isNaN(id));
+    return this.subpartsService.findByIds(idArray);
   }
 
   @Get(':id')

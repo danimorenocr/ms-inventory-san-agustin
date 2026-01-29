@@ -5,7 +5,7 @@ import { UpdatesubpartDto } from '../dto/update-subpart.dto';
 
 @Injectable()
 export class SubpartsRepository {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService) { }
 
   async create(createSubpartDto: CreatesubpartDto) {
     return this.prisma.subparteBase.create({
@@ -47,6 +47,19 @@ export class SubpartsRepository {
       include: {
         categoria: true,
         subpartesLote: true,
+      },
+    });
+  }
+
+  async findByIds(ids: number[]) {
+    return this.prisma.subparteBase.findMany({
+      where: {
+        id: { in: ids },
+        estado: true,
+      },
+      select: {
+        id: true,
+        nombre: true,
       },
     });
   }

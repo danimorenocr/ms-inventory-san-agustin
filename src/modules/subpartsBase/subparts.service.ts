@@ -5,7 +5,7 @@ import { SubpartsRepository } from './repository/subparts.repository';
 
 @Injectable()
 export class SubpartsService {
-  constructor(private readonly repository: SubpartsRepository) {}
+  constructor(private readonly repository: SubpartsRepository) { }
 
   async create(createSubpartDto: CreatesubpartDto) {
     return this.repository.create(createSubpartDto);
@@ -25,6 +25,10 @@ export class SubpartsService {
 
   async findByTipoAnimal(tipoAnimal: string) {
     return this.repository.findByTipoAnimal(tipoAnimal);
+  }
+
+  async findByIds(ids: number[]) {
+    return this.repository.findByIds(ids);
   }
 
   async update(id: number, updateSubpartDto: UpdatesubpartDto) {
