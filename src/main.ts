@@ -26,12 +26,12 @@ async function bootstrap() {
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api', app, document);
 
-  const PORT = process.env.PORT || 4002;
+  const PORT = process.env.PORT || 4003;
   const SERVICE_NAME = 'inventory-service';
   const HOST = process.env.HOST || 'localhost';
 
   await app.listen(PORT);
-  
+
   console.log('='.repeat(60));
   console.log(`🔐 ${SERVICE_NAME} running on http://${HOST}:${PORT}`);
   console.log(`📚 Swagger UI: http://${HOST}:${PORT}/api`);
@@ -87,15 +87,15 @@ async function bootstrap() {
     // ============================================
     const gracefulShutdown = async () => {
       console.log('\n🔌 Shutting down gracefully...');
-      
+
       // Detener heartbeat
       clearInterval(heartbeatInterval);
-      
+
       // Desregistrar de Consul
       console.log('📤 Deregistering from Consul...');
       await consul.agent.service.deregister(serviceId);
       console.log('✅ Service deregistered');
-      
+
       process.exit(0);
     };
 
