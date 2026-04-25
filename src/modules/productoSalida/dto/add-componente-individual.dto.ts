@@ -1,4 +1,4 @@
-import { IsInt, IsNumber } from 'class-validator';
+import { IsInt, IsNumber, IsOptional, Min } from 'class-validator';
 
 export class AddComponenteIndividualDto {
   @IsNumber()
@@ -8,4 +8,9 @@ export class AddComponenteIndividualDto {
   @IsNumber()
   @IsInt()
   productoBaseId: number;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  factorAsignacion?: number;
 }

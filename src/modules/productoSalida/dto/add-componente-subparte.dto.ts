@@ -1,4 +1,4 @@
-import { IsInt, IsNumber } from 'class-validator';
+import { IsInt, IsNumber, IsOptional, Min } from 'class-validator';
 
 export class AddComponenteSubparteDto {
   @IsNumber()
@@ -8,4 +8,9 @@ export class AddComponenteSubparteDto {
   @IsNumber()
   @IsInt()
   subparteBaseId: number;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  factorAsignacion?: number;
 }

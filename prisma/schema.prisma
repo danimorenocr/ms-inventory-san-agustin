@@ -26,6 +26,8 @@ model SubparteBase {
   idCategoriaBase Int
   nombre          String
   estado          Boolean @default(true)
+  reservaCombosKg Float   @default(0)
+  consumidoCombosKg Float @default(0)
 
   categoria     CategoriaBase @relation(fields: [idCategoriaBase], references: [id])
   subpartesLote SubparteLote[]
@@ -52,6 +54,7 @@ model ProductoSalidaComponente {
   id               Int @id @default(autoincrement())
   productoSalidaId Int
   subparteBaseId   Int
+  factorAsignacion Float @default(0)
 
   productoSalida ProductoSalida @relation(fields: [productoSalidaId], references: [id], onDelete: Cascade)
   subparteBase   SubparteBase   @relation(fields: [subparteBaseId], references: [id])
@@ -63,6 +66,7 @@ model ProductoSalidaComponenteIndividual {
   id               Int @id @default(autoincrement())
   productoSalidaId Int
   productoBaseId   Int
+  factorAsignacion Float @default(0)
 
   productoSalida   ProductoSalida @relation(fields: [productoSalidaId], references: [id], onDelete: Cascade)
   productoBase     ProductoBase   @relation(fields: [productoBaseId], references: [id])
@@ -178,6 +182,8 @@ model ProductoBase {
   nombre    String
   categoria String?
   estado    Boolean @default(true)
+  reservaCombosKg Float   @default(0)
+  consumidoCombosKg Float @default(0)
 
   lotesIndividuales LoteIndividual[]
   alertasReglas     AlertaRegla[]

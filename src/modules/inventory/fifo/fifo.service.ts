@@ -34,19 +34,6 @@ export class FIFOService {
     console.log(`⚖️  Peso Necesario TOTAL: ${pesoNecesario} kg`);
     console.log(`🔗 Referencia Venta ID: ${referenciaId || 'N/A'}`);
 
-    // Verificar si hay componentes especificados
-    const tieneComponentesEspecificados = componentes && componentes.length > 0;
-
-    if (tieneComponentesEspecificados) {
-      console.log(`\n📋 Componentes ESPECIFICADOS (cliente define pesos exactos):`);
-      componentes.forEach((c, i) => {
-        console.log(`   ${i + 1}. BaseId: ${c.baseId} | Peso: ${c.peso} kg`);
-      });
-
-      const sumaPesos = componentes.reduce((sum, c) => sum + c.peso, 0);
-      console.log(`   ✅ Suma total: ${sumaPesos.toFixed(3)} kg`);
-    }
-
     // 1️⃣ Definir QUÉ se puede consumir (no cuánto)
     console.log('\n1️⃣ Buscando componentes del producto...');
     const productoSalida = await this.prisma.productoSalida.findUnique({
@@ -63,247 +50,68 @@ export class FIFOService {
 
     console.log(`✅ Producto: "${productoSalida.nombre}"`);
 
+    const componentesManuales = this.normalizarComponentesEntrada(componentes as any[]);
+    const tieneComponentesEspecificados = componentesManuales.length > 0;
+    const componentesParaDescuento =
+      componentesManuales.length > 0
+        ? componentesManuales
+        : await this.construirComponentesAutomaticos(productoSalida, pesoNecesario);
+
+    if (tieneComponentesEspecificados) {
+      console.log(`\n📋 Componentes ESPECIFICADOS (cliente define pesos exactos):`);
+    } else {
+      console.log(`\n📋 Componentes AUTOMATICOS (configurados por combo en BD):`);
+    }
+
+    componentesParaDescuento.forEach((c, i) => {
+      console.log(`   ${i + 1}. BaseId: ${c.baseId} | Peso: ${c.peso.toFixed(3)} kg`);
+    });
+
+    const sumaPesos = componentesParaDescuento.reduce((sum, c) => sum + c.peso, 0);
+    console.log(`   ✅ Suma total: ${sumaPesos.toFixed(3)} kg`);
+
     let totalDescontado = 0;
     let totalItemsDescontados = 0;
 
-    // SI HAY COMPONENTES ESPECIFICADOS: Descontar exactamente esos pesos
-    if (tieneComponentesEspecificados) {
-      console.log(`\n2️⃣ Descontando con pesos ESPECÍFICOS del cliente...`);
+    console.log('\n2️⃣ Descontando inventario con componentes resueltos...');
 
-      for (const componente of componentes) {
-        const { baseId, peso } = componente;
-        console.log(`\n   🔄 Procesando BaseId: ${baseId} | Peso a descontar: ${peso.toFixed(3)} kg`);
+    for (const componente of componentesParaDescuento) {
+      const { baseId, peso } = componente;
+      const tipoBase = (componente as any).tipoBase as 'SUBPARTE' | 'PRODUCTO_BASE' | undefined;
+      const aplicaReserva = Boolean((componente as any).aplicaReserva);
+      console.log(`\n   🔄 Procesando BaseId: ${baseId} | Peso a descontar: ${peso.toFixed(3)} kg`);
 
-        // Buscar stock disponible para este BaseId específico
-        const subpartesLote = await this.prisma.subparteLote.findMany({
-          where: {
-            idSubparteBase: baseId,
-            pesoSubparteKg: { gt: 0 },
-          },
-          orderBy: { fechaPesado: 'asc' }, // FIFO
-        });
-
-        if (subpartesLote.length === 0) {
-          // Si no hay SubparteLote, buscar LoteIndividual
-          const lotesIndividual = await this.prisma.loteIndividual.findMany({
-            where: {
-              idProductoBase: baseId,
-              pesoKg: { gt: 0 },
-            },
-            orderBy: { fechaRegistro: 'asc' }, // FIFO
-          });
-
-          if (lotesIndividual.length === 0) {
-            throw new BadRequestException(
-              `No hay stock disponible para BaseId ${baseId}`,
-            );
-          }
-
-          // Descontar de LoteIndividual
-          console.log(`      Stock en LoteIndividual: ${lotesIndividual.length} lote(s)`);
-          let restante = peso;
-
-          for (const lote of lotesIndividual) {
-            if (restante <= 0) break;
-
-            const consumir = Math.min(lote.pesoKg, restante);
-            console.log(`      🔄 Descontando ${consumir.toFixed(3)} kg de LoteIndividual ID: ${lote.idLote}`);
-
-            await this.prisma.loteIndividual.update({
-              where: { idLote: lote.idLote },
-              data: { pesoKg: { decrement: consumir } },
-            });
-
-            restante -= consumir;
-            totalDescontado += consumir;
-            totalItemsDescontados++;
-            console.log(`         ✅ Descontado. Restante: ${restante.toFixed(3)} kg`);
-          }
-
-          if (restante > 0) {
-            throw new BadRequestException(
-              `Stock insuficiente para BaseId ${baseId}. Faltan ${restante.toFixed(2)} kg`,
-            );
-          }
-        } else {
-          // Descontar de SubparteLote
-          console.log(`      Stock en SubparteLote: ${subpartesLote.length} lote(s)`);
-          let restante = peso;
-
-          for (const subparte of subpartesLote) {
-            if (restante <= 0) break;
-
-            const consumir = Math.min(subparte.pesoSubparteKg, restante);
-            console.log(`      🔄 Descontando ${consumir.toFixed(3)} kg de SubparteLote ID: ${subparte.id}`);
-
-            await this.prisma.subparteLote.update({
-              where: { id: subparte.id },
-              data: { pesoSubparteKg: { decrement: consumir } },
-            });
-
-            await this.prisma.movimientoInventario.create({
-              data: {
-                tipo: 'VENTA',
-                referenciaId,
-                subparteLoteId: subparte.id,
-                subparteBaseId: baseId,
-                peso: consumir,
-              },
-            });
-
-            restante -= consumir;
-            totalDescontado += consumir;
-            totalItemsDescontados++;
-            console.log(`         ✅ Descontado. Restante: ${restante.toFixed(3)} kg`);
-          }
-
-          if (restante > 0) {
-            throw new BadRequestException(
-              `Stock insuficiente para BaseId ${baseId}. Faltan ${restante.toFixed(2)} kg`,
-            );
-          }
-        }
-      }
-    } else {
-      // SI NO hay componentes especificados: Usar el flujo original (dividir peso)
-      console.log('\n2️⃣ Componentes NO especificados. Dividiendo peso entre componentes...');
-
-      const subparteBaseIds = productoSalida.componentes.map(
-        (c) => c.subparteBaseId,
-      );
-      const productoBaseIds = productoSalida.componentesIndividual.map(
-        (c) => c.productoBaseId,
+      const descontado = await this.descontarBaseConPrioridad(
+        baseId,
+        peso,
+        referenciaId,
+        tipoBase,
       );
 
-      console.log(`   📋 SubparteBase IDs: [${subparteBaseIds.join(', ')}]`);
-      console.log(`   📋 ProductoBase IDs: [${productoBaseIds.join(', ')}]`);
-
-      if (subparteBaseIds.length === 0 && productoBaseIds.length === 0) {
+      if (descontado + 0.0001 < peso) {
         throw new BadRequestException(
-          'El producto de salida no tiene componentes definidos',
+          `Stock insuficiente para BaseId ${baseId}. Faltan ${(peso - descontado).toFixed(2)} kg`,
         );
       }
 
-      const totalComponentes = subparteBaseIds.length + productoBaseIds.length;
-      const pesoPorComponente = pesoNecesario / totalComponentes;
+      totalDescontado += descontado;
+      totalItemsDescontados++;
 
-      console.log(`   Total componentes: ${totalComponentes}`);
-      console.log(`   Peso por componente: ${pesoPorComponente.toFixed(3)} kg`);
-
-
-
-      // 3️⃣ Descontar de SubparteLote (por cada SubparteBase)
-      if (subparteBaseIds.length > 0) {
-        console.log(`\n3️⃣ Descontando de SubparteLote...`);
-
-        for (const subparteBaseId of subparteBaseIds) {
-          console.log(`\n   🥩 Procesando SubparteBase ID: ${subparteBaseId}`);
-          console.log(`      Peso a descontar: ${pesoPorComponente.toFixed(3)} kg`);
-
-          // Buscar stock disponible para este SubparteBase específico
-          const subpartesLote = await this.prisma.subparteLote.findMany({
-            where: {
-              idSubparteBase: subparteBaseId,
-              pesoSubparteKg: { gt: 0 },
-            },
-            orderBy: { fechaPesado: 'asc' }, // FIFO
-          });
-
-          console.log(`      Stock encontrado: ${subpartesLote.length} lote(s)`);
-          subpartesLote.forEach((s, i) => {
-            console.log(`         ${i + 1}. ID: ${s.id} | Peso: ${s.pesoSubparteKg} kg | Fecha: ${s.fechaPesado.toISOString()}`);
-          });
-
-          // Aplicar FIFO para este componente
-          let restante = pesoPorComponente;
-          for (const subparte of subpartesLote) {
-            if (restante <= 0) break;
-
-            const consumir = Math.min(subparte.pesoSubparteKg, restante);
-
-            console.log(`      🔄 Descontando ${consumir.toFixed(3)} kg de SubparteLote ID: ${subparte.id}`);
-
-            await this.prisma.subparteLote.update({
-              where: { id: subparte.id },
-              data: { pesoSubparteKg: { decrement: consumir } },
-            });
-
-            await this.prisma.movimientoInventario.create({
-              data: {
-                tipo: 'VENTA',
-                referenciaId,
-                subparteLoteId: subparte.id,
-                subparteBaseId: subparteBaseId,
-                peso: consumir,
-              },
-            });
-
-            restante -= consumir;
-            totalDescontado += consumir;
-            totalItemsDescontados++;
-
-            console.log(`         ✅ Descontado. Restante: ${restante.toFixed(3)} kg`);
-          }
-
-          if (restante > 0) {
-            throw new BadRequestException(
-              `Stock insuficiente para SubparteBase ID ${subparteBaseId}. Faltan ${restante.toFixed(2)} kg`,
-            );
-          }
-        }
+      if (aplicaReserva && tipoBase === 'SUBPARTE') {
+        await this.prisma.subparteBase.update({
+          where: { id: baseId },
+          data: { consumidoCombosKg: { increment: descontado } },
+        });
       }
 
-      // 4️⃣ Descontar de LoteIndividual (por cada ProductoBase)
-      if (productoBaseIds.length > 0) {
-        console.log(`\n4️⃣ Descontando de LoteIndividual...`);
-
-        for (const productoBaseId of productoBaseIds) {
-          console.log(`\n   🛒 Procesando ProductoBase ID: ${productoBaseId}`);
-          console.log(`      Peso a descontar: ${pesoPorComponente.toFixed(3)} kg`);
-
-          // Buscar stock disponible para este ProductoBase específico
-          const lotesIndividual = await this.prisma.loteIndividual.findMany({
-            where: {
-              idProductoBase: productoBaseId,
-              pesoKg: { gt: 0 },
-            },
-            orderBy: { fechaRegistro: 'asc' }, // FIFO
-          });
-
-          console.log(`      Stock encontrado: ${lotesIndividual.length} lote(s)`);
-          lotesIndividual.forEach((l, i) => {
-            console.log(`         ${i + 1}. ID: ${l.idLote} | Peso: ${l.pesoKg} kg | Fecha: ${l.fechaRegistro.toISOString()}`);
-          });
-
-          // Aplicar FIFO para este componente
-          let restante = pesoPorComponente;
-          for (const lote of lotesIndividual) {
-            if (restante <= 0) break;
-
-            const consumir = Math.min(lote.pesoKg, restante);
-
-            console.log(`      🔄 Descontando ${consumir.toFixed(3)} kg de LoteIndividual ID: ${lote.idLote}`);
-
-            await this.prisma.loteIndividual.update({
-              where: { idLote: lote.idLote },
-              data: { pesoKg: { decrement: consumir } },
-            });
-
-            restante -= consumir;
-            totalDescontado += consumir;
-            totalItemsDescontados++;
-
-            console.log(`         ✅ Descontado. Restante: ${restante.toFixed(3)} kg`);
-            console.log(`         ⚠️  Movimiento NO registrado (TODO: crear tabla MovimientoInventarioIndividual)`);
-          }
-
-          if (restante > 0) {
-            throw new BadRequestException(
-              `Stock insuficiente para ProductoBase ID ${productoBaseId}. Faltan ${restante.toFixed(2)} kg`,
-            );
-          }
-        }
+      if (aplicaReserva && tipoBase === 'PRODUCTO_BASE') {
+        await this.prisma.productoBase.update({
+          where: { id: baseId },
+          data: { consumidoCombosKg: { increment: descontado } },
+        });
       }
+
+      console.log(`         ✅ Descontado. Total componente: ${descontado.toFixed(3)} kg`);
     }
 
     // 5️⃣ Validación final
@@ -320,6 +128,251 @@ export class FIFOService {
       itemsDescontados: totalItemsDescontados,
     };
 
+  }
+
+  private normalizarComponentesEntrada(componentes?: any[]) {
+    if (!componentes || componentes.length === 0) {
+      return [] as Array<{ baseId: number; peso: number }>;
+    }
+
+    return componentes
+      .map((componente) => {
+        const baseId = Number(
+          componente?.baseId ?? componente?.subparteBaseId ?? componente?.baseProductId,
+        );
+        const peso = Number(componente?.peso ?? componente?.pesoComponenteKg ?? componente?.weight);
+
+        if (!Number.isFinite(baseId) || baseId <= 0 || !Number.isFinite(peso) || peso <= 0) {
+          return null;
+        }
+
+        return { baseId, peso };
+      })
+      .filter((item): item is { baseId: number; peso: number } => item !== null);
+  }
+
+  private async construirComponentesAutomaticos(productoSalida: any, pesoNecesario: number) {
+    const porReserva = await this.construirComponentesDesdeReservaGlobal(productoSalida, pesoNecesario);
+    if (porReserva.length > 0) {
+      return porReserva;
+    }
+
+    const componentesSubparte = (productoSalida.componentes || []).map((c: any) => ({
+      baseId: c.subparteBaseId,
+      factorAsignacion: Number(c.factorAsignacion || 0),
+    }));
+
+    const componentesIndividual = (productoSalida.componentesIndividual || []).map((c: any) => ({
+      baseId: c.productoBaseId,
+      factorAsignacion: Number(c.factorAsignacion || 0),
+    }));
+
+    const componentes = [...componentesSubparte, ...componentesIndividual];
+
+    if (componentes.length === 0) {
+      throw new BadRequestException('El producto de salida no tiene componentes definidos');
+    }
+
+    const hayFactores = componentes.some((c) => c.factorAsignacion > 0);
+    const totalFactor = hayFactores
+      ? componentes.reduce((sum, c) => sum + (c.factorAsignacion > 0 ? c.factorAsignacion : 0), 0)
+      : componentes.length;
+
+    if (totalFactor <= 0) {
+      throw new BadRequestException(
+        'La configuracion de factores de asignacion no es valida para este producto',
+      );
+    }
+
+    let acumulado = 0;
+    const resultado = componentes.map((componente, index) => {
+      const esUltimo = index === componentes.length - 1;
+      if (esUltimo) {
+        const restante = Number((pesoNecesario - acumulado).toFixed(3));
+        return {
+          baseId: componente.baseId,
+          peso: restante > 0 ? restante : 0,
+        };
+      }
+
+      const factor = hayFactores
+        ? componente.factorAsignacion > 0
+          ? componente.factorAsignacion
+          : 0
+        : 1;
+
+      const peso = Number(((factor / totalFactor) * pesoNecesario).toFixed(3));
+      acumulado += peso;
+
+      return {
+        baseId: componente.baseId,
+        peso,
+      };
+    });
+
+    return resultado.filter((c) => c.peso > 0);
+  }
+
+  private async construirComponentesDesdeReservaGlobal(productoSalida: any, pesoNecesario: number) {
+    const subparteIds = (productoSalida.componentes || []).map((c: any) => c.subparteBaseId);
+    const productoBaseIds = (productoSalida.componentesIndividual || []).map(
+      (c: any) => c.productoBaseId,
+    );
+
+    if (subparteIds.length === 0 && productoBaseIds.length === 0) {
+      return [] as Array<{ baseId: number; peso: number; tipoBase: 'SUBPARTE' | 'PRODUCTO_BASE'; aplicaReserva: boolean }>;
+    }
+
+    const [subpartes, productosBase] = await Promise.all([
+      subparteIds.length
+        ? this.prisma.subparteBase.findMany({
+            where: { id: { in: subparteIds }, estado: true },
+            select: { id: true, reservaCombosKg: true, consumidoCombosKg: true },
+          })
+        : Promise.resolve([]),
+      productoBaseIds.length
+        ? this.prisma.productoBase.findMany({
+            where: { id: { in: productoBaseIds }, estado: true },
+            select: { id: true, reservaCombosKg: true, consumidoCombosKg: true },
+          })
+        : Promise.resolve([]),
+    ]);
+
+    const candidatos = [
+      ...subpartes.map((s) => ({
+        baseId: s.id,
+        tipoBase: 'SUBPARTE' as const,
+        disponible: Math.max(0, Number(s.reservaCombosKg || 0) - Number(s.consumidoCombosKg || 0)),
+      })),
+      ...productosBase.map((p) => ({
+        baseId: p.id,
+        tipoBase: 'PRODUCTO_BASE' as const,
+        disponible: Math.max(0, Number(p.reservaCombosKg || 0) - Number(p.consumidoCombosKg || 0)),
+      })),
+    ].filter((c) => c.disponible > 0);
+
+    if (candidatos.length === 0) {
+      return [];
+    }
+
+    const totalDisponibleReserva = candidatos.reduce((sum, c) => sum + c.disponible, 0);
+    if (totalDisponibleReserva + 0.0001 < pesoNecesario) {
+      throw new BadRequestException(
+        `Reserva global para combos insuficiente. Requerido ${pesoNecesario.toFixed(2)} kg, disponible ${totalDisponibleReserva.toFixed(2)} kg`,
+      );
+    }
+
+    let restante = pesoNecesario;
+    const componentes = [] as Array<{
+      baseId: number;
+      peso: number;
+      tipoBase: 'SUBPARTE' | 'PRODUCTO_BASE';
+      aplicaReserva: boolean;
+    }>;
+
+    for (const candidato of candidatos) {
+      if (restante <= 0) {
+        break;
+      }
+
+      const peso = Number(Math.min(candidato.disponible, restante).toFixed(3));
+      if (peso <= 0) {
+        continue;
+      }
+
+      componentes.push({
+        baseId: candidato.baseId,
+        peso,
+        tipoBase: candidato.tipoBase,
+        aplicaReserva: true,
+      });
+
+      restante = Number((restante - peso).toFixed(3));
+    }
+
+    return componentes;
+  }
+
+  private async descontarBaseConPrioridad(
+    baseId: number,
+    peso: number,
+    referenciaId?: number,
+    tipoBase?: 'SUBPARTE' | 'PRODUCTO_BASE',
+  ) {
+    let restante = peso;
+    let total = 0;
+
+    const consumirSubparte = async () => {
+      const subpartesLote = await this.prisma.subparteLote.findMany({
+        where: {
+          idSubparteBase: baseId,
+          pesoSubparteKg: { gt: 0 },
+        },
+        orderBy: { fechaPesado: 'asc' },
+      });
+
+      for (const subparte of subpartesLote) {
+        if (restante <= 0) break;
+
+        const consumir = Math.min(subparte.pesoSubparteKg, restante);
+
+        await this.prisma.subparteLote.update({
+          where: { id: subparte.id },
+          data: { pesoSubparteKg: { decrement: consumir } },
+        });
+
+        await this.prisma.movimientoInventario.create({
+          data: {
+            tipo: 'VENTA',
+            referenciaId,
+            subparteLoteId: subparte.id,
+            subparteBaseId: baseId,
+            peso: consumir,
+          },
+        });
+
+        restante -= consumir;
+        total += consumir;
+      }
+    };
+
+    const consumirIndividual = async () => {
+      const lotesIndividual = await this.prisma.loteIndividual.findMany({
+        where: {
+          idProductoBase: baseId,
+          pesoKg: { gt: 0 },
+        },
+        orderBy: { fechaRegistro: 'asc' },
+      });
+
+      for (const lote of lotesIndividual) {
+        if (restante <= 0) break;
+
+        const consumir = Math.min(lote.pesoKg, restante);
+
+        await this.prisma.loteIndividual.update({
+          where: { idLote: lote.idLote },
+          data: { pesoKg: { decrement: consumir } },
+        });
+
+        restante -= consumir;
+        total += consumir;
+      }
+    };
+
+    if (tipoBase === 'PRODUCTO_BASE') {
+      await consumirIndividual();
+      if (restante > 0) {
+        await consumirSubparte();
+      }
+    } else {
+      await consumirSubparte();
+      if (restante > 0) {
+        await consumirIndividual();
+      }
+    }
+
+    return total;
   }
 
   /**

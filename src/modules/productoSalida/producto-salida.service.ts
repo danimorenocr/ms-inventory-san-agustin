@@ -7,6 +7,7 @@ import { AddComponenteLoteDto } from './dto/add-componente-lote.dto';
 import { AddComponenteSubparteLoteDto } from './dto/add-componente-subparte-lote.dto';
 import { AddComponenteIndividualDto } from './dto/add-componente-individual.dto';
 import { FIFOService } from '../inventory/fifo/fifo.service';
+import { PrismaService } from '../../infraestructure/prisma/prisma.service';
 
 @Injectable()
 export class ProductoSalidaService {
@@ -15,6 +16,7 @@ export class ProductoSalidaService {
   constructor(
     private readonly repository: ProductoSalidaRepository,
     private readonly fifoService: FIFOService,
+    private readonly prisma: PrismaService,
   ) { }
 
   async create(createProductoSalidaDto: CreateProductoSalidaDto) {
@@ -64,24 +66,25 @@ export class ProductoSalidaService {
   ) {
     this.logger.log(`🔄 Iniciando descuento REAL de stock para ProductoID: ${productoSalidaId}`);
 
-    // Validar que vengan componentes
-    if (!componentes || componentes.length === 0) {
-      this.logger.error(`❌ No se proporcionaron componentes para el descuento`);
-      throw new BadRequestException(
-        'Debe proporcionar los componentes individuales con sus pesos específicos',
-      );
+    if (!cantidad || cantidad <= 0) {
+      throw new BadRequestException('La cantidad total a descontar debe ser mayor a 0');
     }
 
-    this.logger.log(`📋 Descuento con componentes individuales (${componentes.length} componentes)`);
+    if (componentes && componentes.length > 0) {
+      this.logger.log(`📋 Descuento con componentes individuales (${componentes.length} componentes)`);
+    } else {
+      this.logger.log('📋 No se enviaron componentes manuales. Se usará asignación automática del combo');
+    }
 
     try {
-      const resultado = await this.fifoService.descontarPorComponentes(
+      const resultado = await this.fifoService.descontarProductoSalida(
         productoSalidaId,
-        componentes,
+        cantidad,
         undefined,
+        componentes,
       );
 
-      this.logger.log(`✅ Stock descontado exitosamente por componentes`);
+      this.logger.log(`✅ Stock descontado exitosamente`);
 
       return {
         mensaje: 'Stock descontado exitosamente',
@@ -230,5 +233,161 @@ export class ProductoSalidaService {
       productoSalidaId,
       productoBaseId,
     );
+  }
+
+  async getReporteReservasCombos(productoSalidaId?: number) {
+    if (productoSalidaId !== undefined && (!Number.isFinite(productoSalidaId) || productoSalidaId <= 0)) {
+      throw new BadRequestException('productoSalidaId debe ser un numero valido mayor a 0');
+    }
+
+    let productoSalida: any = null;
+    let subparteIds: number[] = [];
+    let productoBaseIds: number[] = [];
+
+    if (productoSalidaId) {
+      productoSalida = await this.prisma.productoSalida.findUnique({
+        where: { id: productoSalidaId },
+        include: {
+          componentes: true,
+          componentesIndividual: true,
+        },
+      });
+
+      if (!productoSalida) {
+        throw new NotFoundException(`Producto Salida con ID ${productoSalidaId} no encontrado`);
+      }
+
+      subparteIds = productoSalida.componentes.map((c) => c.subparteBaseId);
+      productoBaseIds = productoSalida.componentesIndividual.map((c) => c.productoBaseId);
+    }
+
+    const [subpartes, productosBase, stockSubpartes, stockIndividual] = await Promise.all([
+      this.prisma.subparteBase.findMany({
+        where: productoSalidaId
+          ? {
+            id: { in: subparteIds.length > 0 ? subparteIds : [-1] },
+          }
+          : {
+            OR: [
+              { reservaCombosKg: { gt: 0 } },
+              { consumidoCombosKg: { gt: 0 } },
+            ],
+          },
+        select: {
+          id: true,
+          nombre: true,
+          reservaCombosKg: true,
+          consumidoCombosKg: true,
+        },
+      }),
+      this.prisma.productoBase.findMany({
+        where: productoSalidaId
+          ? {
+            id: { in: productoBaseIds.length > 0 ? productoBaseIds : [-1] },
+          }
+          : {
+            OR: [
+              { reservaCombosKg: { gt: 0 } },
+              { consumidoCombosKg: { gt: 0 } },
+            ],
+          },
+        select: {
+          id: true,
+          nombre: true,
+          reservaCombosKg: true,
+          consumidoCombosKg: true,
+        },
+      }),
+      this.prisma.subparteLote.groupBy({
+        by: ['idSubparteBase'],
+        where: {
+          pesoSubparteKg: { gt: 0 },
+          ...(productoSalidaId && subparteIds.length > 0
+            ? { idSubparteBase: { in: subparteIds } }
+            : {}),
+        },
+        _sum: {
+          pesoSubparteKg: true,
+        },
+      }),
+      this.prisma.loteIndividual.groupBy({
+        by: ['idProductoBase'],
+        where: {
+          pesoKg: { gt: 0 },
+          ...(productoSalidaId && productoBaseIds.length > 0
+            ? { idProductoBase: { in: productoBaseIds } }
+            : {}),
+        },
+        _sum: {
+          pesoKg: true,
+        },
+      }),
+    ]);
+
+    const stockSubpartesMap = new Map<number, number>(
+      stockSubpartes.map((s) => [s.idSubparteBase, Number(s._sum.pesoSubparteKg || 0)]),
+    );
+
+    const stockIndividualMap = new Map<number, number>(
+      stockIndividual.map((s) => [s.idProductoBase, Number(s._sum.pesoKg || 0)]),
+    );
+
+    const subpartesReporte = subpartes.map((item) => {
+      const reservaKg = Number(item.reservaCombosKg || 0);
+      const consumidoKg = Number(item.consumidoCombosKg || 0);
+      return {
+        tipoBase: 'subparte',
+        baseId: item.id,
+        nombre: item.nombre,
+        reservaKg,
+        consumidoKg,
+        disponibleReservaKg: Math.max(0, reservaKg - consumidoKg),
+        stockFisicoKg: Number(stockSubpartesMap.get(item.id) || 0),
+      };
+    });
+
+    const productosBaseReporte = productosBase.map((item) => {
+      const reservaKg = Number(item.reservaCombosKg || 0);
+      const consumidoKg = Number(item.consumidoCombosKg || 0);
+      return {
+        tipoBase: 'producto_base',
+        baseId: item.id,
+        nombre: item.nombre,
+        reservaKg,
+        consumidoKg,
+        disponibleReservaKg: Math.max(0, reservaKg - consumidoKg),
+        stockFisicoKg: Number(stockIndividualMap.get(item.id) || 0),
+      };
+    });
+
+    const items = [...subpartesReporte, ...productosBaseReporte];
+
+    const resumen = items.reduce(
+      (acc, item) => {
+        acc.reservaTotalKg += item.reservaKg;
+        acc.consumidoTotalKg += item.consumidoKg;
+        acc.disponibleReservaTotalKg += item.disponibleReservaKg;
+        acc.stockFisicoTotalKg += item.stockFisicoKg;
+        return acc;
+      },
+      {
+        reservaTotalKg: 0,
+        consumidoTotalKg: 0,
+        disponibleReservaTotalKg: 0,
+        stockFisicoTotalKg: 0,
+      },
+    );
+
+    return {
+      productoSalida: productoSalida
+        ? {
+          id: productoSalida.id,
+          nombre: productoSalida.nombre,
+        }
+        : null,
+      totalBases: items.length,
+      resumen,
+      items,
+    };
   }
 }

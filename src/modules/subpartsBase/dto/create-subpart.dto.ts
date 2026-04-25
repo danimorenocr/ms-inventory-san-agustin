@@ -1,6 +1,6 @@
 
 
-import { IsInt, IsString, IsNotEmpty, IsBoolean, IsOptional } from 'class-validator';
+import { IsInt, IsString, IsNotEmpty, IsBoolean, IsOptional, IsNumber, Min } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class CreatesubpartDto {
@@ -28,5 +28,15 @@ export class CreatesubpartDto {
 	@IsBoolean()
 	@IsOptional()
 	estado?: boolean;
+
+	@ApiProperty({
+		description: 'Kg reservados globalmente para ventas de combos',
+		example: 10,
+		required: false,
+	})
+	@IsNumber()
+	@Min(0)
+	@IsOptional()
+	reservaCombosKg?: number;
 }
 

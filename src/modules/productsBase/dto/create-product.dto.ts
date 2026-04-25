@@ -1,4 +1,4 @@
-import { IsString, IsNotEmpty, IsOptional, IsBoolean } from 'class-validator';
+import { IsString, IsNotEmpty, IsOptional, IsBoolean, IsNumber, Min } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class CreateProductDto {
@@ -27,4 +27,14 @@ export class CreateProductDto {
   @IsBoolean()
   @IsOptional()
   estado?: boolean;
+
+  @ApiProperty({
+    description: 'Kg reservados globalmente para ventas de combos',
+    example: 10,
+    required: false,
+  })
+  @IsNumber()
+  @Min(0)
+  @IsOptional()
+  reservaCombosKg?: number;
 }

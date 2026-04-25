@@ -7,6 +7,7 @@ import {
   Param,
   Delete,
   ParseIntPipe,
+  Query,
 } from '@nestjs/common';
 import { ProductoSalidaService } from './producto-salida.service';
 import { CreateProductoSalidaDto } from './dto/create-producto-salida.dto';
@@ -28,6 +29,14 @@ export class ProductoSalidaController {
   @Get()
   findAll() {
     return this.service.findAll();
+  }
+
+  @Get('reservas-combos/reporte')
+  getReporteReservasCombos(
+    @Query('productoSalidaId') productoSalidaId?: string,
+  ) {
+    const id = productoSalidaId ? Number(productoSalidaId) : undefined;
+    return this.service.getReporteReservasCombos(id);
   }
 
   @Get(':id')

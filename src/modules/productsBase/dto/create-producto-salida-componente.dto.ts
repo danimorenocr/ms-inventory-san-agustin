@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsNotEmpty, IsNumber } from 'class-validator';
+import { IsNotEmpty, IsNumber, IsOptional, Min } from 'class-validator';
 
 export class CreateProductoSalidaComponenteDto {
   @ApiProperty({ example: 1 })
@@ -11,4 +11,10 @@ export class CreateProductoSalidaComponenteDto {
   @IsNotEmpty()
   @IsNumber()
   subparteBaseId: number;
+
+  @ApiProperty({ example: 0.5, required: false })
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  factorAsignacion?: number;
 }
