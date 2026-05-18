@@ -11,8 +11,8 @@ import { LoteIndividualModule } from './modules/individualLote/individualLote.mo
 import { ProviderModule } from './modules/providers/provider.module';
 import { AlertModule } from './modules/alerts/alert.module';
 import { AlertaReglaModule } from './modules/alertaRegla/alerta-regla.module';
-import { RegistroMermaModule } from './modules/registroMerma/registro-merma.module';
-import { MovimientoInventarioModule } from './modules/registroMerma/movimiento-inventario.module';
+// import { RegistroMermaModule } from './modules/registroMerma/registro-merma.module';
+// import { MovimientoInventarioModule } from './modules/registroMerma/movimiento-inventario.module';
 import { ProvenanceModule } from './modules/provenance/provenance.module';
 import { HealthController } from './health.controller';
 import { InventoryModule } from './modules/inventory/inventory.module';
@@ -31,8 +31,8 @@ import { InventoryModule } from './modules/inventory/inventory.module';
     ProviderModule,
     AlertModule,
     AlertaReglaModule,
-    RegistroMermaModule,
-    MovimientoInventarioModule,
+    // RegistroMermaModule,
+    // MovimientoInventarioModule,
     ProvenanceModule,
     InventoryModule,
   ],

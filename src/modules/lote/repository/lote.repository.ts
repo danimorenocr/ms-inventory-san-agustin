@@ -8,8 +8,15 @@ export class LoteRepository {
   constructor(private readonly prisma: PrismaService) { }
 
   async create(createLoteDto: CreateLoteDto) {
+    const { procedenciaId, ...rest } = createLoteDto;
+    const data: any = {
+      ...rest,
+    };
+    if (procedenciaId) {
+      data.procedenciaId = procedenciaId;
+    }
     return this.prisma.lote.create({
-      data: createLoteDto,
+      data,
     });
   }
 

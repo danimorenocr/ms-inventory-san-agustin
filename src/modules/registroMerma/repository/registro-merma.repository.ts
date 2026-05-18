@@ -8,53 +8,26 @@ export class RegistroMermaRepository {
   constructor(private readonly prisma: PrismaService) {}
 
   async create(dto: CreateRegistroMermaDto) {
-    return this.prisma.registroMerma.create({
-      data: dto,
-      include: {
-        lote: true,
-      },
-    });
+    throw new Error('registroMerma model not implemented in schema');
   }
 
   async findAll() {
-    return this.prisma.registroMerma.findMany({
-      include: {
-        lote: true,
-      },
-    });
+    throw new Error('registroMerma model not implemented in schema');
   }
 
   async findOne(id: number) {
-    return this.prisma.registroMerma.findUnique({
-      where: { id },
-      include: {
-        lote: true,
-      },
-    });
+    throw new Error('registroMerma model not implemented in schema');
   }
 
   async findByLote(idLote: number) {
-    return this.prisma.registroMerma.findUnique({
-      where: { idLote },
-      include: {
-        lote: true,
-      },
-    });
+    throw new Error('registroMerma model not implemented in schema');
   }
 
   async update(id: number, dto: UpdateRegistroMermaDto) {
-    return this.prisma.registroMerma.update({
-      where: { id },
-      data: dto,
-      include: {
-        lote: true,
-      },
-    });
+    throw new Error('registroMerma model not implemented in schema');
   }
 
   async remove(id: number) {
-    return this.prisma.registroMerma.delete({
-      where: { id },
-    });
+    throw new Error('registroMerma model not implemented in schema');
   }
 }
