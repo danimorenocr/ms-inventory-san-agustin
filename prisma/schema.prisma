@@ -1,15 +1,13 @@
 generator client {
-  provider = "prisma-client-js"
+  provider        = "prisma-client-js"
+  previewFeatures = ["multiSchema"]
 }
 
 datasource db {
-  provider  = "postgresql"
-  url       = env("DATABASE_URL")
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  schemas  = ["inventory"]
 }
-
-/* ================================
-   CATÁLOGOS BASE
-================================ */
 
 model CategoriaBase {
   id         Int     @id @default(autoincrement())
@@ -19,63 +17,64 @@ model CategoriaBase {
 
   subpartes      SubparteBase[]
   categoriasLote CategoriaLote[]
+
+  @@schema("inventory")
 }
 
 model SubparteBase {
-  id              Int     @id @default(autoincrement())
-  idCategoriaBase Int
-  nombre          String
-  estado          Boolean @default(true)
-  reservaCombosKg Float   @default(0)
-  consumidoCombosKg Float @default(0)
+  id                Int     @id @default(autoincrement())
+  idCategoriaBase   Int
+  nombre            String
+  estado            Boolean @default(true)
+  reservaCombosKg   Float   @default(0)
+  consumidoCombosKg Float   @default(0)
 
-  categoria     CategoriaBase @relation(fields: [idCategoriaBase], references: [id])
-  subpartesLote SubparteLote[]
+  categoria                  CategoriaBase              @relation(fields: [idCategoriaBase], references: [id])
+  subpartesLote              SubparteLote[]
   productosSalidaComponentes ProductoSalidaComponente[]
+
+  @@schema("inventory")
 }
 
-/* ================================
-   PRODUCTOS DE SALIDA (VENTA)
-================================ */
-
 model ProductoSalida {
-  id     Int     @id @default(autoincrement())
-  nombre String
-  unidad String  // kg | unidad
-  precio Float?  // Precio unitario
+  id       Int     @id @default(autoincrement())
+  nombre   String
+  unidad   String
+  precio   Float?
   etiqueta String?
-  activo Boolean @default(true)
+  activo   Boolean @default(true)
 
-  componentes            ProductoSalidaComponente[]
-  componentesIndividual  ProductoSalidaComponenteIndividual[]
+  componentes           ProductoSalidaComponente[]
+  componentesIndividual ProductoSalidaComponenteIndividual[]
+
+  @@schema("inventory")
 }
 
 model ProductoSalidaComponente {
-  id               Int @id @default(autoincrement())
+  id               Int   @id @default(autoincrement())
   productoSalidaId Int
   subparteBaseId   Int
   factorAsignacion Float @default(0)
 
   productoSalida ProductoSalida @relation(fields: [productoSalidaId], references: [id], onDelete: Cascade)
   subparteBase   SubparteBase   @relation(fields: [subparteBaseId], references: [id])
+
   @@unique([productoSalidaId, subparteBaseId])
+  @@schema("inventory")
 }
 
-
 model ProductoSalidaComponenteIndividual {
-  id               Int @id @default(autoincrement())
+  id               Int   @id @default(autoincrement())
   productoSalidaId Int
   productoBaseId   Int
   factorAsignacion Float @default(0)
 
-  productoSalida   ProductoSalida @relation(fields: [productoSalidaId], references: [id], onDelete: Cascade)
-  productoBase     ProductoBase   @relation(fields: [productoBaseId], references: [id])
-  @@unique([productoSalidaId, productoBaseId])
-}
+  productoSalida ProductoSalida @relation(fields: [productoSalidaId], references: [id], onDelete: Cascade)
+  productoBase   ProductoBase   @relation(fields: [productoBaseId], references: [id])
 
-/* ================================
-   INGRESO DE INVENTARIO
-================================ */
+  @@unique([productoSalidaId, productoBaseId])
+  @@schema("inventory")
+}
 
 model Procedencia {
   id     Int    @id @default(autoincrement())
@@ -83,64 +82,59 @@ model Procedencia {
 
   lotes           Lote[]
   lotesIndividual LoteIndividual[]
+
+  @@schema("inventory")
 }
 
 model Proveedor {
-  id           Int      @id @default(autoincrement())
-  nombre       String
-  tipoAnimal   String
-  telefono     String?
-  ciudad       String?
+  id            Int     @id @default(autoincrement())
+  nombre        String
+  tipoAnimal    String
+  telefono      String?
+  ciudad        String?
   tipoProveedor String
-  direccion    String?
-  cedulaNit    String
-  correo       String?
-  observacion  String?
+  direccion     String?
+  cedulaNit     String
+  correo        String?
+  observacion   String?
 
   lotes Lote[]
+
+  @@schema("inventory")
 }
 
-/* ================================
-   LOTE PRINCIPAL
-================================ */
-
 model Lote {
-  id            Int      @id @default(autoincrement())
-  tipoIngreso   String
-  tipoAnimal    String
-  procedenciaId Int?
-  procedencia   Procedencia? @relation(fields: [procedenciaId], references: [id])
-  guia          Boolean?
-  fotoGuia      String?
-  pesoKgInicial     Float
-  pesoKgActual      Float
-  pesoKgLimpio      Float?   // Nuevo campo: peso limpio en kg
-  pesoArrobaLimpio  Float?   // Nuevo campo: peso limpio en arrobas
-  precioKg          Float?
-  precioArroba      Float?
-  precioTotal       Float
-  limpio            Boolean?
-  sexo              String?
-  clasificacion     String?
-  dientes           Int?
-  despostado        Boolean  @default(false)
-  fechaIngreso      DateTime @default(now())
-  idUsuario     Int
+  id               Int      @id @default(autoincrement())
+  tipoIngreso      String
+  tipoAnimal       String
+  procedenciaId    Int?
+  guia             Boolean?
+  fotoGuia         String?
+  pesoKgInicial    Float
+  pesoKgActual     Float
+  pesoKgLimpio     Float?
+  pesoArrobaLimpio Float?
+  precioKg         Float?
+  precioArroba     Float?
+  precioTotal      Float
+  limpio           Boolean?
+  sexo             String?
+  clasificacion    String?
+  dientes          Int?
+  despostado       Boolean  @default(false)
+  fechaIngreso     DateTime @default(now())
+  idUsuario        Int
+  proveedorId      Int
 
-  proveedorId Int
-  proveedor   Proveedor @relation(fields: [proveedorId], references: [id])
-
+  procedencia    Procedencia?    @relation(fields: [procedenciaId], references: [id])
+  proveedor      Proveedor       @relation(fields: [proveedorId], references: [id])
   categoriasLote CategoriaLote[]
   subpartesLote  SubparteLote[]
   loteIndividual LoteIndividual?
+  alertasReglas  AlertaRegla[]
 
-
-  alertasReglas AlertaRegla[]
+  @@schema("inventory")
 }
-
-/* ================================
-   DESPOSTE
-================================ */
 
 model CategoriaLote {
   id              Int      @id @default(autoincrement())
@@ -151,9 +145,10 @@ model CategoriaLote {
 
   lote          Lote          @relation(fields: [idLote], references: [id])
   categoriaBase CategoriaBase @relation(fields: [idCategoriaBase], references: [id])
-
-  subpartes SubparteLote[]
+  subpartes     SubparteLote[]
   alertasReglas AlertaRegla[]
+
+  @@schema("inventory")
 }
 
 model SubparteLote {
@@ -164,57 +159,51 @@ model SubparteLote {
   pesoSubparteKg  Float
   fechaPesado     DateTime @default(now())
 
-  lote          Lote          @relation(fields: [idLote], references: [id])
-  categoriaLote CategoriaLote @relation(fields: [idCategoriaLote], references: [id])
-  subparteBase  SubparteBase  @relation(fields: [idSubparteBase], references: [id])
-
-  movimientos MovimientoInventario[]
-
+  lote          Lote                   @relation(fields: [idLote], references: [id])
+  categoriaLote CategoriaLote          @relation(fields: [idCategoriaLote], references: [id])
+  subparteBase  SubparteBase           @relation(fields: [idSubparteBase], references: [id])
+  movimientos   MovimientoInventario[]
   alertasReglas AlertaRegla[]
+
+  @@schema("inventory")
 }
 
-/* ================================
-   COMPRAS INDIVIDUALES
-================================ */
-
 model ProductoBase {
-  id        Int     @id @default(autoincrement())
-  nombre    String
-  categoria String?
-  estado    Boolean @default(true)
-  reservaCombosKg Float   @default(0)
-  consumidoCombosKg Float @default(0)
+  id                Int     @id @default(autoincrement())
+  nombre            String
+  categoria         String?
+  estado            Boolean @default(true)
+  reservaCombosKg   Float   @default(0)
+  consumidoCombosKg Float   @default(0)
 
-  lotesIndividuales LoteIndividual[]
-  alertasReglas     AlertaRegla[]
+  lotesIndividuales          LoteIndividual[]
+  alertasReglas              AlertaRegla[]
   productosSalidaComponentes ProductoSalidaComponenteIndividual[]
+
+  @@schema("inventory")
 }
 
 model LoteIndividual {
-  idLote         Int @id
+  idLote         Int      @id
   idProductoBase Int
   pesoKg         Float
   precioKg       Float
   precioTotal    Float
   unidades       Int?
   fechaRegistro  DateTime @default(now())
+  procedenciaId  Int?
 
-  procedenciaId Int?
-  procedencia   Procedencia? @relation(fields: [procedenciaId], references: [id])
-
-  lote     Lote         @relation(fields: [idLote], references: [id])
-  producto ProductoBase @relation(fields: [idProductoBase], references: [id])
-  // Removed relation to ProductoSalidaComponenteIndividual
+  procedencia   Procedencia?  @relation(fields: [procedenciaId], references: [id])
+  lote          Lote          @relation(fields: [idLote], references: [id])
+  producto      ProductoBase  @relation(fields: [idProductoBase], references: [id])
   alertasReglas AlertaRegla[]
-}
 
-/* ================================
-   MOVIMIENTOS (SALIDAS)
-================================ */
+  @@schema("inventory")
+}
 
 model MovimientoInventario {
   id             Int      @id @default(autoincrement())
-  tipo           String   // VENTA | MERMA | AJUSTE
+  tipo           String
   referenciaId   Int?
   subparteLoteId Int
   subparteBaseId Int
@@ -222,38 +211,37 @@ model MovimientoInventario {
   fecha          DateTime @default(now())
 
   subparteLote SubparteLote @relation(fields: [subparteLoteId], references: [id])
+
+  @@schema("inventory")
 }
 
-/* ================================
-   ALERTAS
-================================ */
-
 model Alerta {
-  id        Int      @id @default(autoincrement())
-  tipo      String   // INFO | WARNING | CRITICO
-  mensaje   String
-  fecha     DateTime @default(now())
-  leida     Boolean  @default(false)
+  id      Int      @id @default(autoincrement())
+  tipo    String
+  mensaje String
+  fecha   DateTime @default(now())
+  leida   Boolean  @default(false)
+
+  @@schema("inventory")
 }
 
 model AlertaRegla {
-  id                 Int      @id @default(autoincrement())
+  id               Int      @id @default(autoincrement())
+  loteId           Int?
+  categoriaLoteId  Int?
+  subparteLoteId   Int?
+  loteIndividualId Int?
+  productoId       Int?
+  tipo             String
+  valor            Float
+  activa           Boolean  @default(true)
+  fechaCreada      DateTime @default(now())
 
-  loteId             Int?
-  categoriaLoteId    Int?
-  subparteLoteId     Int?
-  loteIndividualId   Int?
-  productoId         Int?
+  lote           Lote?           @relation(fields: [loteId], references: [id])
+  categoriaLote  CategoriaLote?  @relation(fields: [categoriaLoteId], references: [id])
+  subparteLote   SubparteLote?   @relation(fields: [subparteLoteId], references: [id])
+  loteIndividual LoteIndividual? @relation(fields: [loteIndividualId], references: [idLote])
+  producto       ProductoBase?   @relation(fields: [productoId], references: [id])
 
-  tipo               String   // MINIMO_KG | PORCENTAJE | etc.
-  valor              Float
-
-  activa             Boolean  @default(true)
-  fechaCreada        DateTime @default(now())
-
-  lote               Lote?            @relation(fields: [loteId], references: [id])
-  categoriaLote      CategoriaLote?   @relation(fields: [categoriaLoteId], references: [id])
-  subparteLote       SubparteLote?    @relation(fields: [subparteLoteId], references: [id])
-  loteIndividual     LoteIndividual?  @relation(fields: [loteIndividualId], references: [idLote])
-  producto           ProductoBase?    @relation(fields: [productoId], references: [id])
+  @@schema("inventory")
 }
