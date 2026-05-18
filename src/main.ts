@@ -64,12 +64,12 @@ async function bootstrap() {
     for (let attempt = 1; attempt <= retries; attempt++) {
       try {
         console.log(`🔄 Registering with Consul... (${attempt}/${retries})`);
-
+        const IS_PRODUCTION = process.env.NODE_ENV === 'production';
         await consul.agent.service.register({
           id: serviceId,
           name: SERVICE_NAME,
           address: SERVICE_HOST,
-          port: Number(PORT),
+          port: IS_PRODUCTION ? 443 : Number(PORT), // ✅ 443 en producción
           check: {
             ttl: '10s',
             deregister_critical_service_after: '1m',
