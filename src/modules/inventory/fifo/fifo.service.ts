@@ -15,6 +15,161 @@ export class FIFOService {
   constructor(private prisma: PrismaService) { }
 
   /**
+   * Asigna automáticamente componentes a un combo usando FIFO sobre reservas
+   * Determina cuánto peso de cada componente es necesario basándose en los factores de asignación
+   * Luego busca esas cantidades en las reservas disponibles (reservaCombosKg)
+   * 
+   * @param productoSalidaId - ID del ProductoSalida (combo)
+   * @param pesoTotal - Peso total del combo a vender
+   * @returns Array de componentes con sus pesos asignados
+   */
+  async asignarComponentesConFIFO(
+    productoSalidaId: number,
+    pesoTotal: number,
+  ): Promise<Array<{ baseId: number; peso: number }>> {
+    console.log(`\n🔄 Asignando componentes con FIFO para ProductoSalidaId: ${productoSalidaId}`);
+    console.log(`   Peso total: ${pesoTotal} kg`);
+
+    // Obtener la configuración del combo (componentes y factores de asignación)
+    const productoSalida = await this.prisma.productoSalida.findUnique({
+      where: { id: productoSalidaId },
+      include: {
+        componentes: true,
+        componentesIndividual: true,
+      },
+    });
+
+    if (!productoSalida) {
+      throw new BadRequestException(`ProductoSalida ${productoSalidaId} no encontrado`);
+    }
+
+    // Construir lista de componentes con su factor de asignación
+    const componentesConfig = [
+      ...(productoSalida.componentes || []).map((c: any) => ({
+        baseId: c.subparteBaseId,
+        factor: Number(c.factorAsignacion || 0),
+        tipoBase: 'SUBPARTE',
+      })),
+      ...(productoSalida.componentesIndividual || []).map((c: any) => ({
+        baseId: c.productoBaseId,
+        factor: Number(c.factorAsignacion || 0),
+        tipoBase: 'PRODUCTO_BASE',
+      })),
+    ];
+
+    if (componentesConfig.length === 0) {
+      throw new BadRequestException('El combo no tiene componentes configurados');
+    }
+
+    // Calcular pesos necesarios de cada componente basándose en factores
+    const hayFactores = componentesConfig.some((c) => c.factor > 0);
+    const totalFactor = hayFactores
+      ? componentesConfig.reduce((sum, c) => sum + (c.factor > 0 ? c.factor : 0), 0)
+      : componentesConfig.length;
+
+    if (totalFactor <= 0) {
+      throw new BadRequestException('La configuración de factores no es válida');
+    }
+
+    console.log(`   Componentes configurados: ${componentesConfig.length}`);
+    console.log(`   Total factor: ${totalFactor}`);
+
+    // Calcular peso de cada componente
+    let componentesPeso = [] as Array<{ baseId: number; peso: number; tipoBase: string }>;
+    let acumulado = 0;
+
+    for (let i = 0; i < componentesConfig.length; i++) {
+      const componente = componentesConfig[i];
+      const esUltimo = i === componentesConfig.length - 1;
+
+      let peso: number;
+      if (esUltimo) {
+        // Último componente: asignar el peso restante
+        peso = Math.max(0, pesoTotal - acumulado);
+      } else {
+        const factor = hayFactores
+          ? componente.factor > 0
+            ? componente.factor
+            : 0
+          : 1;
+        peso = Number(((factor / totalFactor) * pesoTotal).toFixed(3));
+      }
+
+      if (peso > 0) {
+        componentesPeso.push({
+          baseId: componente.baseId,
+          peso,
+          tipoBase: componente.tipoBase,
+        });
+        acumulado += peso;
+      }
+
+      console.log(`   ${i + 1}. BaseId ${componente.baseId} (${componente.tipoBase}): ${peso.toFixed(3)} kg`);
+    }
+
+    // Verificar disponibilidad - primero en reservas, luego en inventario real
+    console.log(`\n   🔍 Verificando disponibilidad...`);
+    
+    for (const comp of componentesPeso) {
+      let disponibleEnReserva = 0;
+      let disponibleEnInventario = 0;
+
+      if (comp.tipoBase === 'SUBPARTE') {
+        // Verificar reserva
+        const subparte = await this.prisma.subparteBase.findUnique({
+          where: { id: comp.baseId },
+          select: { reservaCombosKg: true, consumidoCombosKg: true },
+        });
+        disponibleEnReserva = Math.max(0, Number(subparte?.reservaCombosKg || 0) - Number(subparte?.consumidoCombosKg || 0));
+
+        // Si no hay en reserva, verificar en inventario real (SubparteLote)
+        if (disponibleEnReserva < comp.peso) {
+          const inventarioReal = await this.prisma.subparteLote.aggregate({
+            where: { idSubparteBase: comp.baseId, pesoSubparteKg: { gt: 0 } },
+            _sum: { pesoSubparteKg: true },
+          });
+          disponibleEnInventario = Number(inventarioReal._sum.pesoSubparteKg || 0);
+        }
+      } else {
+        // Verificar reserva
+        const producto = await this.prisma.productoBase.findUnique({
+          where: { id: comp.baseId },
+          select: { reservaCombosKg: true, consumidoCombosKg: true },
+        });
+        disponibleEnReserva = Math.max(0, Number(producto?.reservaCombosKg || 0) - Number(producto?.consumidoCombosKg || 0));
+
+        // Si no hay en reserva, verificar en inventario real (LoteIndividual)
+        if (disponibleEnReserva < comp.peso) {
+          const inventarioReal = await this.prisma.loteIndividual.aggregate({
+            where: { idProductoBase: comp.baseId, pesoKg: { gt: 0 } },
+            _sum: { pesoKg: true },
+          });
+          disponibleEnInventario = Number(inventarioReal._sum.pesoKg || 0);
+        }
+      }
+
+      const totalDisponible = disponibleEnReserva + disponibleEnInventario;
+
+      if (totalDisponible < comp.peso) {
+        throw new BadRequestException(
+          `Stock insuficiente para BaseId ${comp.baseId}. Requerido: ${comp.peso.toFixed(2)} kg, disponible: ${totalDisponible.toFixed(2)} kg (Reserva: ${disponibleEnReserva.toFixed(2)} kg, Inventario: ${disponibleEnInventario.toFixed(2)} kg)`,
+        );
+      }
+
+      console.log(`      BaseId ${comp.baseId}: ${comp.peso.toFixed(3)} kg ✅`);
+      if (disponibleEnReserva > 0) {
+        console.log(`         └─ Reserva: ${disponibleEnReserva.toFixed(3)} kg`);
+      }
+      if (disponibleEnInventario > 0) {
+        console.log(`         └─ Inventario: ${disponibleEnInventario.toFixed(3)} kg`);
+      }
+    }
+
+    console.log(`   ✅ Asignación FIFO completada\n`);
+    return componentesPeso.map((c) => ({ baseId: c.baseId, peso: c.peso }));
+  }
+
+  /**
    * Descuenta un ProductoSalida del inventario usando FIFO
    * CON COMPONENTES ESPECIFICADOS: El cliente define exactamente cuánto descontar de cada componente
    * 

@@ -619,6 +619,63 @@ async function main() {
 
   console.log("✔ Alertas por regla creadas.");
 
+  // ============================================================
+  // 15. CREAR COMBO DE PRODUCTOS CON COMPONENTES
+  // ============================================================
+  const comboPremium = await prisma.productoSalida.create({
+    data: {
+      nombre: "Combo Premium Carnes Mixtas",
+      unidad: "kg",
+      precio: 55000,
+      etiqueta: "COMBO-PREMIUM",
+      activo: true
+    }
+  });
+
+  // Asociar componentes al combo con factores de asignación
+  await prisma.productoSalidaComponente.createMany({
+    data: [
+      {
+        productoSalidaId: comboPremium.id,
+        subparteBaseId: 10, // Bola de brazo - 40% del peso
+        factorAsignacion: 0.4
+      },
+      {
+        productoSalidaId: comboPremium.id,
+        subparteBaseId: 3, // Cogote - 30% del peso
+        factorAsignacion: 0.3
+      },
+      {
+        productoSalidaId: comboPremium.id,
+        subparteBaseId: 1, // Tapa de cogote - 30% del peso
+        factorAsignacion: 0.3
+      }
+    ]
+  });
+
+  console.log("✔ Combo Premium creado con componentes.");
+
+  // Agregar reservas de combos a las subpartes
+  await prisma.subparteBase.updateMany({
+    where: {
+      id: { in: [1, 3, 10] } // Tapa de cogote, Cogote, Bola de brazo
+    },
+    data: {
+      reservaCombosKg: 15 // 15 kg reservado por combo
+    }
+  });
+
+  console.log("✔ Reservas de combos asignadas a subpartes.");
+
+  console.log("\n📦 COMBO CREADO:");
+  console.log(`- ID Combo: ${comboPremium.id}`);
+  console.log("- Nombre: Combo Premium Carnes Mixtas");
+  console.log("- Componentes:");
+  console.log("  • Bola de brazo (id: 10): 40%");
+  console.log("  • Cogote (id: 3): 30%");
+  console.log("  • Tapa de cogote (id: 1): 30%");
+  console.log("- Reservas asignadas: 15 kg por componente");
+
   console.log("\n🌱 Seed completado con éxito - Todas las tablas pobladas.");
 }
 
