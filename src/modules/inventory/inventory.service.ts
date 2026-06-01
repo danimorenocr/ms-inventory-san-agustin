@@ -359,4 +359,139 @@ export class InventoryService {
       disponibleParaReservar: disponibleParaReservar - dto.cantidad,
     };
   }
+
+  /**
+   * Descuenta un combo directamente desde balanza
+   * Solo recibe el peso total, el FIFO decide de qué componentes descontar
+   * según disponibilidad (no importa el porcentaje)
+   * 
+   * @param productoSalidaId - ID del ProductoSalida (combo)
+   * @param pesoTotal - Peso total medido por la balanza (kg)
+   * @param motivo - Motivo del descuento
+   * @param ventaId - ID de la venta (opcional)
+   */
+  async descontarComboDesdeBalanza(
+    productoSalidaId: number,
+    pesoTotal: number,
+    motivo: string,
+    ventaId?: number,
+  ) {
+    console.log('\n🟠 ========== DESCUENTO COMBO DESDE BALANZA ==========');
+    console.log(`📦 ProductoSalidaId (Combo): ${productoSalidaId}`);
+    console.log(`⚖️  Peso total (balanza): ${pesoTotal} kg`);
+    console.log(`📝 Motivo: ${motivo}`);
+    if (ventaId) console.log(`💳 VentaId: ${ventaId}`);
+
+    // Obtener el combo y sus componentes
+    const combo = await this.prisma.productoSalida.findUnique({
+      where: { id: productoSalidaId },
+      include: {
+        componentes: {
+          include: {
+            subparteBase: true,
+          },
+        },
+      },
+    });
+
+    if (!combo) {
+      throw new NotFoundException(`ProductoSalida ${productoSalidaId} no encontrado`);
+    }
+
+    if (combo.componentes.length === 0) {
+      throw new BadRequestException(
+        `El combo "${combo.nombre}" no tiene componentes configurados`,
+      );
+    }
+
+    console.log(`✅ Combo encontrado: "${combo.nombre}"`);
+    console.log(`📋 Componentes del combo: ${combo.componentes.length}`);
+
+    // Obtener disponibilidad por componente
+    console.log('\n🔍 Verificando disponibilidad en reservas y stock físico...');
+    const componentesConDisponibilidad = [];
+    let totalDisponible = 0;
+
+    for (const componente of combo.componentes) {
+      const subparte = await this.prisma.subparteBase.findUnique({
+        where: { id: componente.subparteBaseId },
+      });
+
+      // Disponible en reservas
+      const disponibleReserva = Math.max(
+        0,
+        (subparte.reservaCombosKg || 0) - (subparte.consumidoCombosKg || 0),
+      );
+
+      // Disponible en stock físico (SubparteLote)
+      const stockFisico = await this.prisma.subparteLote.aggregate({
+        where: {
+          idSubparteBase: componente.subparteBaseId,
+          pesoSubparteKg: { gt: 0 },
+        },
+        _sum: { pesoSubparteKg: true },
+      });
+      const disponibleFisico = stockFisico._sum.pesoSubparteKg || 0;
+
+      const totalDisponibleComponente = disponibleReserva + disponibleFisico;
+      totalDisponible += totalDisponibleComponente;
+
+      console.log(
+        `   • ${componente.subparteBase.nombre} (ID: ${componente.subparteBaseId}): ` +
+        `${totalDisponibleComponente.toFixed(2)} kg disponible ` +
+        `(Reserva: ${disponibleReserva.toFixed(2)} + Físico: ${disponibleFisico.toFixed(2)})`
+      );
+
+      componentesConDisponibilidad.push({
+        baseId: componente.subparteBaseId,
+        nombre: componente.subparteBase.nombre,
+        disponible: totalDisponibleComponente,
+      });
+    }
+
+    console.log(`\n📊 Total disponible en componentes: ${totalDisponible.toFixed(2)} kg`);
+    console.log(`⚖️  Peso requerido: ${pesoTotal.toFixed(2)} kg`);
+
+    if (totalDisponible < pesoTotal) {
+      throw new BadRequestException(
+        `Stock insuficiente para el combo. Disponible: ${totalDisponible.toFixed(2)} kg, Requerido: ${pesoTotal.toFixed(2)} kg`
+      );
+    }
+
+    // Distribuir el peso entre componentes disponibles (FIFO simple)
+    console.log('\n🔄 Distribuyendo peso entre componentes disponibles (FIFO)...');
+    const componentesParaDescontar = [];
+    let pesoRestante = pesoTotal;
+
+    for (const componente of componentesConDisponibilidad) {
+      if (pesoRestante <= 0) break;
+
+      const pesoADescontar = Math.min(pesoRestante, componente.disponible);
+      
+      console.log(
+        `   Descontando ${pesoADescontar.toFixed(3)} kg de ${componente.nombre}`
+      );
+
+      componentesParaDescontar.push({
+        baseId: componente.baseId,
+        peso: pesoADescontar,
+      });
+
+      pesoRestante -= pesoADescontar;
+    }
+
+    console.log(`\n✅ Distribución FIFO completada`);
+
+    // Usar el método de FIFO para descontar
+    const resultado = await this.fifo.descontarProductoSalida(
+      productoSalidaId,
+      pesoTotal,
+      ventaId,
+      componentesParaDescontar,
+    );
+
+    console.log('🟠 ========== FIN DESCUENTO DESDE BALANZA ==========\n');
+    
+    return resultado;
+  }
 }

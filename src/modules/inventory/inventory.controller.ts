@@ -2,10 +2,11 @@ import { Controller, Post, Body, Param, ParseIntPipe } from '@nestjs/common';
 import { InventoryService } from './inventory.service';
 import { ConsumeProductoSalidaDto } from './dto/consume-product.dto';
 import { DescontarProductoSalidaDto } from './dto/descontar-producto-salida.dto';
+import { DescontarComboBalanzaDto } from './dto/descontar-combo-balanza.dto';
 import { ReservaParaCombosDto } from './dto/reserva-para-combos.dto';
 import { ValidateStockDto } from './dto/validate-stock.dto';
 
-@Controller('')
+@Controller('inventory')
 export class InventoryController {
   constructor(private readonly inventoryService: InventoryService) { }
 
@@ -33,6 +34,19 @@ export class InventoryController {
     @Body() dto: DescontarProductoSalidaDto,
   ) {
     return this.inventoryService.descontarProductoSalidaCombo(productoSalidaId, dto);
+  }
+
+  @Post('productos-salida/:id/descontar-balanza')
+  descontarComboDesdeBalanza(
+    @Param('id', ParseIntPipe) productoSalidaId: number,
+    @Body() dto: DescontarComboBalanzaDto,
+  ) {
+    return this.inventoryService.descontarComboDesdeBalanza(
+      productoSalidaId,
+      dto.pesoTotal,
+      dto.motivo,
+      dto.ventaId,
+    );
   }
 
   @Post('subpartes-base/:id/reserve')
