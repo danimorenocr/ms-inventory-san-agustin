@@ -1,5 +1,8 @@
 import { Module } from '@nestjs/common';
+import { APP_FILTER } from '@nestjs/core';
 import { PrismaModule } from './infraestructure/prisma/prisma.module';
+import { SyncModule } from './modules/sync/sync.module';
+import { OfflineFilter } from './modules/sync/offline.filter';
 import { CategoriesBaseModule } from './modules/categoriesBase/categories.module';
 import { SubpartsModule } from './modules/subpartsBase/subparts.module';
 import { ProductsModule } from './modules/productsBase/products.module';
@@ -35,8 +38,14 @@ import { InventoryModule } from './modules/inventory/inventory.module';
     MovimientoInventarioModule,
     ProvenanceModule,
     InventoryModule,
+    SyncModule,
   ],
   controllers: [HealthController],
-  providers: [],
+  providers: [
+    {
+      provide: APP_FILTER,
+      useClass: OfflineFilter,
+    },
+  ],
 })
 export class AppModule { }
