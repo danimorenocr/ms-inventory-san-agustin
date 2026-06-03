@@ -149,12 +149,38 @@ export class InventoryService {
         (c) => c.productoBaseId,
       );
 
+      // Obtener detalles de SubparteBase y ProductoBase
+      const [subpartesInfo, productosBaseInfo] = await Promise.all([
+        subparteBaseIds.length > 0
+          ? this.prisma.subparteBase.findMany({
+              where: { id: { in: subparteBaseIds } },
+              select: { id: true, nombre: true, reservaCombosKg: true, consumidoCombosKg: true },
+            })
+          : Promise.resolve([]),
+        productoBaseIds.length > 0
+          ? this.prisma.productoBase.findMany({
+              where: { id: { in: productoBaseIds } },
+              select: { id: true, nombre: true, reservaCombosKg: true, consumidoCombosKg: true },
+            })
+          : Promise.resolve([]),
+      ]);
+
+      const nombresComponentes = new Set([
+        ...subpartesInfo.map(c => c.nombre.trim().toLowerCase()),
+        ...productosBaseInfo.map(c => c.nombre.trim().toLowerCase())
+      ]);
+
+      const totalComponentes = subparteBaseIds.length + productoBaseIds.length;
+      const esCombo = nombresComponentes.size > 1;
+
       console.log(`   📋 SubparteBase IDs: [${subparteBaseIds.join(', ')}]`);
       console.log(`   📋 ProductoBase IDs: [${productoBaseIds.join(', ')}]`);
+      console.log(`   📋 Nombres Únicos: ${nombresComponentes.size} | Es Combo: ${esCombo}`);
 
-      // Calcular stock disponible total (SubparteLote + LoteIndividual)
-      const [stockSubpartes, stockIndividual] = await Promise.all([
-        this.prisma.subparteLote.aggregate({
+      // Obtener stock físico por componente
+      const [stockSubpartesGroup, stockIndividualGroup] = await Promise.all([
+        this.prisma.subparteLote.groupBy({
+          by: ['idSubparteBase'],
           where: {
             idSubparteBase: { in: subparteBaseIds },
             pesoSubparteKg: { gt: 0 },
@@ -163,7 +189,8 @@ export class InventoryService {
             pesoSubparteKg: true,
           },
         }),
-        this.prisma.loteIndividual.aggregate({
+        this.prisma.loteIndividual.groupBy({
+          by: ['idProductoBase'],
           where: {
             idProductoBase: { in: productoBaseIds },
             pesoKg: { gt: 0 },
@@ -174,14 +201,47 @@ export class InventoryService {
         }),
       ]);
 
-      const disponibleSubpartes = stockSubpartes._sum.pesoSubparteKg || 0;
-      const disponibleIndividual = stockIndividual._sum.pesoKg || 0;
-      const disponibleTotal = disponibleSubpartes + disponibleIndividual;
+      const stockSubpartesMap = new Map<number, number>(
+        stockSubpartesGroup.map((s) => [s.idSubparteBase, s._sum.pesoSubparteKg || 0]),
+      );
+      const stockIndividualMap = new Map<number, number>(
+        stockIndividualGroup.map((s) => [s.idProductoBase, s._sum.pesoKg || 0]),
+      );
 
-      console.log(`   📊 Stock disponible:`);
-      console.log(`      🥩 SubparteLote: ${disponibleSubpartes.toFixed(2)} kg`);
-      console.log(`      🛒 LoteIndividual: ${disponibleIndividual.toFixed(2)} kg`);
-      console.log(`      📦 TOTAL: ${disponibleTotal.toFixed(2)} kg`);
+      // Calcular el stock disponible según si es combo o individual
+      let disponibleTotal = 0;
+
+      for (const info of subpartesInfo) {
+        const physicalStock = stockSubpartesMap.get(info.id) || 0;
+        const disponibleReserva = Math.max(0, (info.reservaCombosKg || 0) - (info.consumidoCombosKg || 0));
+        
+        let availableForThisProduct = 0;
+        if (esCombo) {
+          // Si es combo, el disponible de esta subparte es su reserva (capada por stock físico)
+          availableForThisProduct = Math.min(disponibleReserva, physicalStock);
+        } else {
+          // Si es producto individual, el disponible es stock físico menos lo reservado para combos
+          availableForThisProduct = Math.max(0, physicalStock - disponibleReserva);
+        }
+        disponibleTotal += availableForThisProduct;
+        console.log(`      Subparte "${info.nombre}": Físico=${physicalStock.toFixed(2)}, ReservaDisp=${disponibleReserva.toFixed(2)} => Disponible=${availableForThisProduct.toFixed(2)}`);
+      }
+
+      for (const info of productosBaseInfo) {
+        const physicalStock = stockIndividualMap.get(info.id) || 0;
+        const disponibleReserva = Math.max(0, (info.reservaCombosKg || 0) - (info.consumidoCombosKg || 0));
+
+        let availableForThisProduct = 0;
+        if (esCombo) {
+          availableForThisProduct = Math.min(disponibleReserva, physicalStock);
+        } else {
+          availableForThisProduct = Math.max(0, physicalStock - disponibleReserva);
+        }
+        disponibleTotal += availableForThisProduct;
+        console.log(`      ProductoBase "${info.nombre}": Físico=${physicalStock.toFixed(2)}, ReservaDisp=${disponibleReserva.toFixed(2)} => Disponible=${availableForThisProduct.toFixed(2)}`);
+      }
+
+      console.log(`   📊 Stock disponible total para validación: ${disponibleTotal.toFixed(2)} kg`);
 
       if (disponibleTotal < item.pesoRequerido) {
         const faltante = item.pesoRequerido - disponibleTotal;
@@ -256,10 +316,18 @@ export class InventoryService {
     console.log(`   🔒 Ya reservado: ${yaReservado.toFixed(2)} kg`);
     console.log(`   ✅ Disponible para reservar: ${disponibleParaReservar.toFixed(2)} kg`);
 
-    if (disponibleParaReservar < dto.cantidad) {
-      throw new BadRequestException(
-        `No hay suficiente inventario para reservar. Requerido: ${dto.cantidad.toFixed(2)} kg, disponible: ${disponibleParaReservar.toFixed(2)} kg`,
-      );
+    if (dto.cantidad > 0) {
+      if (disponibleParaReservar < dto.cantidad) {
+        throw new BadRequestException(
+          `No hay suficiente inventario para reservar. Requerido: ${dto.cantidad.toFixed(2)} kg, disponible: ${disponibleParaReservar.toFixed(2)} kg`,
+        );
+      }
+    } else if (dto.cantidad < 0) {
+      if (yaReservado < Math.abs(dto.cantidad)) {
+        throw new BadRequestException(
+          `No puedes liberar más de lo reservado. Requerido liberar: ${Math.abs(dto.cantidad).toFixed(2)} kg, reservado actualmente: ${yaReservado.toFixed(2)} kg`,
+        );
+      }
     }
 
     // Actualizar reservaCombosKg
@@ -330,10 +398,18 @@ export class InventoryService {
     console.log(`   🔒 Ya reservado: ${yaReservado.toFixed(2)} kg`);
     console.log(`   ✅ Disponible para reservar: ${disponibleParaReservar.toFixed(2)} kg`);
 
-    if (disponibleParaReservar < dto.cantidad) {
-      throw new BadRequestException(
-        `No hay suficiente inventario para reservar. Requerido: ${dto.cantidad.toFixed(2)} kg, disponible: ${disponibleParaReservar.toFixed(2)} kg`,
-      );
+    if (dto.cantidad > 0) {
+      if (disponibleParaReservar < dto.cantidad) {
+        throw new BadRequestException(
+          `No hay suficiente inventario para reservar. Requerido: ${dto.cantidad.toFixed(2)} kg, disponible: ${disponibleParaReservar.toFixed(2)} kg`,
+        );
+      }
+    } else if (dto.cantidad < 0) {
+      if (yaReservado < Math.abs(dto.cantidad)) {
+        throw new BadRequestException(
+          `No puedes liberar más de lo reservado. Requerido liberar: ${Math.abs(dto.cantidad).toFixed(2)} kg, reservado actualmente: ${yaReservado.toFixed(2)} kg`,
+        );
+      }
     }
 
     // Actualizar reservaCombosKg
@@ -377,18 +453,23 @@ export class InventoryService {
     ventaId?: number,
   ) {
     console.log('\n🟠 ========== DESCUENTO COMBO DESDE BALANZA ==========');
-    console.log(`📦 ProductoSalidaId (Combo): ${productoSalidaId}`);
+    console.log(`📦 ProductoSalidaId (Combo/Individual): ${productoSalidaId}`);
     console.log(`⚖️  Peso total (balanza): ${pesoTotal} kg`);
     console.log(`📝 Motivo: ${motivo}`);
     if (ventaId) console.log(`💳 VentaId: ${ventaId}`);
 
-    // Obtener el combo y sus componentes
+    // Obtener el producto de salida con todos sus componentes (subpartes e individuales)
     const combo = await this.prisma.productoSalida.findUnique({
       where: { id: productoSalidaId },
       include: {
         componentes: {
           include: {
             subparteBase: true,
+          },
+        },
+        componentesIndividual: {
+          include: {
+            productoBase: true,
           },
         },
       },
@@ -398,30 +479,38 @@ export class InventoryService {
       throw new NotFoundException(`ProductoSalida ${productoSalidaId} no encontrado`);
     }
 
-    if (combo.componentes.length === 0) {
+    const totalComponentes = combo.componentes.length + combo.componentesIndividual.length;
+    if (totalComponentes === 0) {
       throw new BadRequestException(
-        `El combo "${combo.nombre}" no tiene componentes configurados`,
+        `El producto "${combo.nombre}" no tiene componentes configurados`,
       );
     }
 
-    console.log(`✅ Combo encontrado: "${combo.nombre}"`);
-    console.log(`📋 Componentes del combo: ${combo.componentes.length}`);
+    const nombresComponentes = new Set([
+      ...combo.componentes.map(c => c.subparteBase.nombre.trim().toLowerCase()),
+      ...combo.componentesIndividual.map(c => c.productoBase.nombre.trim().toLowerCase())
+    ]);
+
+    const esCombo = nombresComponentes.size > 1;
+
+    console.log(`✅ Producto encontrado: "${combo.nombre}"`);
+    console.log(`📋 Total Componentes: ${totalComponentes} | Nombres Únicos: ${nombresComponentes.size} | Es Combo: ${esCombo}`);
 
     // Obtener disponibilidad por componente
     console.log('\n🔍 Verificando disponibilidad en reservas y stock físico...');
     const componentesConDisponibilidad = [];
     let totalDisponible = 0;
 
+    // Procesar componentes de SubparteBase
     for (const componente of combo.componentes) {
       const subparte = await this.prisma.subparteBase.findUnique({
         where: { id: componente.subparteBaseId },
       });
 
-      // Disponible en reservas
-      const disponibleReserva = Math.max(
-        0,
-        (subparte.reservaCombosKg || 0) - (subparte.consumidoCombosKg || 0),
-      );
+      // Disponible en reservas (solo si es combo)
+      const disponibleReserva = esCombo
+        ? Math.max(0, (subparte.reservaCombosKg || 0) - (subparte.consumidoCombosKg || 0))
+        : 0;
 
       // Disponible en stock físico (SubparteLote)
       const stockFisico = await this.prisma.subparteLote.aggregate({
@@ -437,7 +526,7 @@ export class InventoryService {
       totalDisponible += totalDisponibleComponente;
 
       console.log(
-        `   • ${componente.subparteBase.nombre} (ID: ${componente.subparteBaseId}): ` +
+        `   • Subparte: ${componente.subparteBase.nombre} (ID: ${componente.subparteBaseId}): ` +
         `${totalDisponibleComponente.toFixed(2)} kg disponible ` +
         `(Reserva: ${disponibleReserva.toFixed(2)} + Físico: ${disponibleFisico.toFixed(2)})`
       );
@@ -445,36 +534,107 @@ export class InventoryService {
       componentesConDisponibilidad.push({
         baseId: componente.subparteBaseId,
         nombre: componente.subparteBase.nombre,
-        disponible: totalDisponibleComponente,
+        tipoBase: 'SUBPARTE' as const,
+        disponibleReserva,
+        disponibleFisico,
+        disponibleTotal: totalDisponibleComponente,
       });
     }
 
-    console.log(`\n📊 Total disponible en componentes: ${totalDisponible.toFixed(2)} kg`);
+    // Procesar componentes de ProductoBase (Individuales)
+    for (const componente of combo.componentesIndividual) {
+      const productoBase = await this.prisma.productoBase.findUnique({
+        where: { id: componente.productoBaseId },
+      });
+
+      // Disponible en reservas (solo si es combo)
+      const disponibleReserva = esCombo
+        ? Math.max(0, (productoBase.reservaCombosKg || 0) - (productoBase.consumidoCombosKg || 0))
+        : 0;
+
+      // Disponible en stock físico (LoteIndividual)
+      const stockFisico = await this.prisma.loteIndividual.aggregate({
+        where: {
+          idProductoBase: componente.productoBaseId,
+          pesoKg: { gt: 0 },
+        },
+        _sum: { pesoKg: true },
+      });
+      const disponibleFisico = stockFisico._sum.pesoKg || 0;
+
+      const totalDisponibleComponente = disponibleReserva + disponibleFisico;
+      totalDisponible += totalDisponibleComponente;
+
+      console.log(
+        `   • ProductoBase: ${componente.productoBase.nombre} (ID: ${componente.productoBaseId}): ` +
+        `${totalDisponibleComponente.toFixed(2)} kg disponible ` +
+        `(Reserva: ${disponibleReserva.toFixed(2)} + Físico: ${disponibleFisico.toFixed(2)})`
+      );
+
+      componentesConDisponibilidad.push({
+        baseId: componente.productoBaseId,
+        nombre: componente.productoBase.nombre,
+        tipoBase: 'PRODUCTO_BASE' as const,
+        disponibleReserva,
+        disponibleFisico,
+        disponibleTotal: totalDisponibleComponente,
+      });
+    }
+
+    console.log(`\n📊 Total disponible sumado de componentes: ${totalDisponible.toFixed(2)} kg`);
     console.log(`⚖️  Peso requerido: ${pesoTotal.toFixed(2)} kg`);
 
     if (totalDisponible < pesoTotal) {
       throw new BadRequestException(
-        `Stock insuficiente para el combo. Disponible: ${totalDisponible.toFixed(2)} kg, Requerido: ${pesoTotal.toFixed(2)} kg`
+        `Stock insuficiente para el producto. Disponible: ${totalDisponible.toFixed(2)} kg, Requerido: ${pesoTotal.toFixed(2)} kg`
       );
     }
 
-    // Distribuir el peso entre componentes disponibles (FIFO simple)
+    // Distribuir el peso entre componentes disponibles (FIFO)
     console.log('\n🔄 Distribuyendo peso entre componentes disponibles (FIFO)...');
     const componentesParaDescontar = [];
     let pesoRestante = pesoTotal;
 
-    for (const componente of componentesConDisponibilidad) {
-      if (pesoRestante <= 0) break;
+    // Paso 1: Consumir de la reserva de cada componente (solo si es combo)
+    if (esCombo) {
+      for (const comp of componentesConDisponibilidad) {
+        if (pesoRestante <= 0) break;
+        if (comp.disponibleReserva <= 0) continue;
 
-      const pesoADescontar = Math.min(pesoRestante, componente.disponible);
-      
+        const pesoADescontar = Math.min(pesoRestante, comp.disponibleReserva);
+        console.log(
+          `   Descontando ${pesoADescontar.toFixed(3)} kg de RESERVA de ${comp.nombre}`
+        );
+
+        componentesParaDescontar.push({
+          baseId: comp.baseId,
+          peso: pesoADescontar,
+          tipoBase: comp.tipoBase,
+          aplicaReserva: true,
+        });
+
+        pesoRestante -= pesoADescontar;
+        comp.disponibleReserva -= pesoADescontar;
+        comp.disponibleTotal -= pesoADescontar;
+      }
+    }
+
+    // Paso 2: Consumir del stock físico de cada componente
+    for (const comp of componentesConDisponibilidad) {
+      if (pesoRestante <= 0) break;
+      const disponibleRestante = esCombo ? comp.disponibleFisico : comp.disponibleTotal;
+      if (disponibleRestante <= 0) continue;
+
+      const pesoADescontar = Math.min(pesoRestante, disponibleRestante);
       console.log(
-        `   Descontando ${pesoADescontar.toFixed(3)} kg de ${componente.nombre}`
+        `   Descontando ${pesoADescontar.toFixed(3)} kg de STOCK FÍSICO de ${comp.nombre}`
       );
 
       componentesParaDescontar.push({
-        baseId: componente.baseId,
+        baseId: comp.baseId,
         peso: pesoADescontar,
+        tipoBase: comp.tipoBase,
+        aplicaReserva: false,
       });
 
       pesoRestante -= pesoADescontar;

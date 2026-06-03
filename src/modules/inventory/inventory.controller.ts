@@ -6,7 +6,7 @@ import { DescontarComboBalanzaDto } from './dto/descontar-combo-balanza.dto';
 import { ReservaParaCombosDto } from './dto/reserva-para-combos.dto';
 import { ValidateStockDto } from './dto/validate-stock.dto';
 
-@Controller('inventory')
+@Controller()
 export class InventoryController {
   constructor(private readonly inventoryService: InventoryService) { }
 
@@ -28,13 +28,14 @@ export class InventoryController {
     return this.inventoryService.reintegrarProductoSalida(dto);
   }
 
-  @Post('productos-salida/:id/descontar')
-  descontarProductoSalida(
-    @Param('id', ParseIntPipe) productoSalidaId: number,
-    @Body() dto: DescontarProductoSalidaDto,
-  ) {
-    return this.inventoryService.descontarProductoSalidaCombo(productoSalidaId, dto);
-  }
+  // Comentado para evitar colisión de rutas con ProductoSalidaController
+  // @Post('productos-salida/:id/descontar')
+  // descontarProductoSalida(
+  //   @Param('id', ParseIntPipe) productoSalidaId: number,
+  //   @Body() dto: DescontarProductoSalidaDto,
+  // ) {
+  //   return this.inventoryService.descontarProductoSalidaCombo(productoSalidaId, dto);
+  // }
 
   @Post('productos-salida/:id/descontar-balanza')
   descontarComboDesdeBalanza(

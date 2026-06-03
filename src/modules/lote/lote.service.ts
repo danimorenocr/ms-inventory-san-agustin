@@ -192,21 +192,27 @@ export class LoteService {
       },
     });
 
+    if (subpartes.length === 0) {
+        return { subpartes: [], totalGeneral: 0 };
+    }
+
+    const subparteIds = subpartes.map(s => s.idSubparteBase);
+    const subpartesBases = await this.prisma.subparteBase.findMany({
+        where: { id: { in: subparteIds } },
+        include: { categoria: true },
+    });
+
+    const subparteMap = new Map(subpartesBases.map(s => [s.id, s]));
     const resultado = [];
 
     for (const subparte of subpartes) {
-      const subparteBase = await this.prisma.subparteBase.findUnique({
-        where: { id: subparte.idSubparteBase },
-        include: {
-          categoria: true,
-        },
-      });
+      const subparteBase = subparteMap.get(subparte.idSubparteBase);
 
       resultado.push({
         idSubparteBase: subparte.idSubparteBase,
         nombreSubparte: subparteBase?.nombre || 'Desconocida',
-        categoria: subparteBase?.categoria.nombre || 'Sin categoría',
-        tipoAnimal: subparteBase?.categoria.tipoAnimal || 'Sin tipo',
+        categoria: subparteBase?.categoria?.nombre || 'Sin categoría',
+        tipoAnimal: subparteBase?.categoria?.tipoAnimal || 'Sin tipo',
         totalKg: Number(subparte._sum.pesoSubparteKg ?? 0),
       });
     }
@@ -233,12 +239,20 @@ export class LoteService {
       },
     });
 
+    if (productos.length === 0) {
+        return { productos: [], totalGeneral: 0 };
+    }
+
+    const productoIds = productos.map(p => p.idProductoBase);
+    const productosBases = await this.prisma.productoBase.findMany({
+        where: { id: { in: productoIds } }
+    });
+
+    const productoMap = new Map(productosBases.map(p => [p.id, p]));
     const resultado = [];
 
     for (const producto of productos) {
-      const productoBase = await this.prisma.productoBase.findUnique({
-        where: { id: producto.idProductoBase },
-      });
+      const productoBase = productoMap.get(producto.idProductoBase);
 
       resultado.push({
         id: producto.idProductoBase,

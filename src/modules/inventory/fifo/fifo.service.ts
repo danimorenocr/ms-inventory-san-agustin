@@ -374,7 +374,8 @@ export class FIFOService {
       (c: any) => c.productoBaseId,
     );
 
-    if (subparteIds.length === 0 && productoBaseIds.length === 0) {
+    // Si no es un combo (tiene 1 o menos componentes), no aplica reserva global
+    if (subparteIds.length + productoBaseIds.length <= 1) {
       return [] as Array<{ baseId: number; peso: number; tipoBase: 'SUBPARTE' | 'PRODUCTO_BASE'; aplicaReserva: boolean }>;
     }
 
