@@ -47,6 +47,7 @@ export class InventoryController {
       dto.pesoTotal,
       dto.motivo,
       dto.ventaId,
+      dto.unidades,
     );
   }
 

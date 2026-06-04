@@ -21,4 +21,11 @@ export class DescontarComboBalanzaDto {
   @IsOptional()
   @IsInt()
   ventaId?: number;
+
+  /**
+   * Unidades opcionales a descontar (ej: si se venden 5 patas)
+   */
+  @IsOptional()
+  @IsInt()
+  unidades?: number;
 }

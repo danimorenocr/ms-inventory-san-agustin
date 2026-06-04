@@ -183,6 +183,7 @@ export class FIFOService {
     pesoNecesario: number,
     referenciaId?: number,
     componentes?: Array<{ baseId: number; peso: number }>,
+    unidades?: number,
   ) {
     console.log('\n🔵 ========== INICIO DESCUENTO DE INVENTARIO ==========');
     console.log(`📦 ProductoSalidaId: ${productoSalidaId}`);
@@ -227,6 +228,7 @@ export class FIFOService {
 
     let totalDescontado = 0;
     let totalItemsDescontados = 0;
+    let unidadesPorDescontar = unidades || 0;
 
     console.log('\n2️⃣ Descontando inventario con componentes resueltos...');
 
@@ -241,7 +243,10 @@ export class FIFOService {
         peso,
         referenciaId,
         tipoBase,
+        unidadesPorDescontar,
       );
+      // Consume units so they are only deducted from the first base component processed
+      unidadesPorDescontar = 0;
 
       if (descontado + 0.0001 < peso) {
         throw new BadRequestException(
@@ -454,6 +459,7 @@ export class FIFOService {
     peso: number,
     referenciaId?: number,
     tipoBase?: 'SUBPARTE' | 'PRODUCTO_BASE',
+    unidades?: number,
   ) {
     let restante = peso;
     let total = 0;
@@ -501,14 +507,23 @@ export class FIFOService {
         orderBy: { fechaRegistro: 'asc' },
       });
 
+      let unidadesADescontar = unidades || 0;
+
       for (const lote of lotesIndividual) {
         if (restante <= 0) break;
 
         const consumir = Math.min(lote.pesoKg, restante);
 
+        const updateData: any = { pesoKg: { decrement: consumir } };
+        if (unidadesADescontar > 0) {
+          console.log(`      🔢 Descontando ${unidadesADescontar} unidades de LoteIndividual ID: ${lote.idLote}`);
+          updateData.unidades = { decrement: unidadesADescontar };
+          unidadesADescontar = 0; // Solo descontar una vez
+        }
+
         await this.prisma.loteIndividual.update({
           where: { idLote: lote.idLote },
-          data: { pesoKg: { decrement: consumir } },
+          data: updateData,
         });
 
         restante -= consumir;

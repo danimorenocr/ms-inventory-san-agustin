@@ -451,6 +451,7 @@ export class InventoryService {
     pesoTotal: number,
     motivo: string,
     ventaId?: number,
+    unidades?: number,
   ) {
     console.log('\n🟠 ========== DESCUENTO COMBO DESDE BALANZA ==========');
     console.log(`📦 ProductoSalidaId (Combo/Individual): ${productoSalidaId}`);
@@ -648,6 +649,7 @@ export class InventoryService {
       pesoTotal,
       ventaId,
       componentesParaDescontar,
+      unidades,
     );
 
     console.log('🟠 ========== FIN DESCUENTO DESDE BALANZA ==========\n');
