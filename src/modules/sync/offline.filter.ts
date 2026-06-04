@@ -18,7 +18,7 @@ export class OfflineFilter implements ExceptionFilter {
       exception instanceof Prisma.PrismaClientInitializationError ||
       exception.message?.includes('Connection refused') ||
       exception.message?.includes('timed out') ||
-      exception.message?.includes('Can\\'t reach database server') ||
+      exception.message?.includes('Can\'t reach database server') ||
       exception.code === 'P1001' ||
       exception.code === 'P1008';
 
