@@ -91,6 +91,8 @@ npx prisma migrate reset --force
 npm run start:dev
 ```
 
+
+npx prisma generate --schema=./prisma/schema.local.prisma
 ## 📚 API Endpoints
 
 ### Categorías Base (`/categories-base`)

@@ -257,3 +257,17 @@ model AlertaRegla {
   loteIndividual     LoteIndividual?  @relation(fields: [loteIndividualId], references: [idLote])
   producto           ProductoBase?    @relation(fields: [productoId], references: [id])
 }
+
+/* ================================
+   SYNC QUEUE (OFFLINE-FIRST)
+================================ */
+
+model SyncQueue {
+  id        Int      @id @default(autoincrement())
+  entity    String   // ej: 'MovimientoInventario', 'Venta'
+  action    String   // ej: 'CREATE', 'UPDATE', 'DELETE'
+  payload   String   // JSON con los datos a sincronizar
+  createdAt DateTime @default(now())
+  synced    Boolean  @default(false)
+  syncedAt  DateTime?
+}
