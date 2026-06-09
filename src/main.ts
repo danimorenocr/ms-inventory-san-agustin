@@ -41,70 +41,74 @@ async function bootstrap() {
   // ============================================
   // 🔵 REGISTRAR EN CONSUL CON TTL CHECK 
   // ============================================
-  const consul = new Consul({
-    host: process.env.CONSUL_HOST || 'localhost',
-    port: process.env.CONSUL_PORT || '8500',
-    promisify: true,
-  });
-
-  const serviceId = `${SERVICE_NAME}-${PORT}`;
-
-  try {
-    await consul.agent.service.register({
-      id: serviceId,
-      name: SERVICE_NAME,
-      address: HOST,
-      port: Number(PORT),
-      check: {
-        ttl: '10s', // ← Cambio a TTL check
-        deregister_critical_service_after: '1m',
-      },
-      tags: ['inventory', 'rest', 'http'],
-      meta: {
-        version: '1.0',
-        description: 'Inventory microservice',
-      },
+  if (process.env.DISCOVERY_MODE === 'consul') {
+    const consul = new Consul({
+      host: process.env.CONSUL_HOST || 'localhost',
+      port: process.env.CONSUL_PORT || '8500',
+      promisify: true,
     });
 
-    console.log(`✅ Service registered in Consul as '${SERVICE_NAME}'`);
-    console.log(`🔗 Consul UI: http://localhost:8500/ui/dc1/services/${SERVICE_NAME}`);
-    console.log('='.repeat(60));
+    const serviceId = `${SERVICE_NAME}-${PORT}`;
 
-    // ============================================
-    // 💓 HEARTBEAT - Actualizar TTL cada 5 segundos
-    // ============================================
-    const heartbeatInterval = setInterval(async () => {
-      try {
-        await consul.agent.check.pass({ id: `service:${serviceId}` });
-        // console.log(`💚 Heartbeat sent to Consul`);
-      } catch (error) {
-        console.error('❌ Error sending heartbeat:', error.message);
-      }
-    }, 5000); // Cada 5 segundos (TTL es 10s, así que tenemos margen)
+    try {
+      await consul.agent.service.register({
+        id: serviceId,
+        name: SERVICE_NAME,
+        address: HOST,
+        port: Number(PORT),
+        check: {
+          ttl: '10s', // ← Cambio a TTL check
+          deregister_critical_service_after: '1m',
+        },
+        tags: ['inventory', 'rest', 'http'],
+        meta: {
+          version: '1.0',
+          description: 'Inventory microservice',
+        },
+      });
 
-    // ============================================
-    // 🔌 GRACEFUL SHUTDOWN
-    // ============================================
-    const gracefulShutdown = async () => {
-      console.log('\n🔌 Shutting down gracefully...');
+      console.log(`✅ Service registered in Consul as '${SERVICE_NAME}'`);
+      console.log(`🔗 Consul UI: http://localhost:8500/ui/dc1/services/${SERVICE_NAME}`);
+      console.log('='.repeat(60));
 
-      // Detener heartbeat
-      clearInterval(heartbeatInterval);
+      // ============================================
+      // 💓 HEARTBEAT - Actualizar TTL cada 5 segundos
+      // ============================================
+      const heartbeatInterval = setInterval(async () => {
+        try {
+          await consul.agent.check.pass({ id: `service:${serviceId}` });
+          // console.log(`💚 Heartbeat sent to Consul`);
+        } catch (error) {
+          console.error('❌ Error sending heartbeat:', error.message);
+        }
+      }, 5000); // Cada 5 segundos (TTL es 10s, así que tenemos margen)
 
-      // Desregistrar de Consul
-      console.log('📤 Deregistering from Consul...');
-      await consul.agent.service.deregister(serviceId);
-      console.log('✅ Service deregistered');
+      // ============================================
+      // 🔌 GRACEFUL SHUTDOWN
+      // ============================================
+      const gracefulShutdown = async () => {
+        console.log('\n🔌 Shutting down gracefully...');
 
-      process.exit(0);
-    };
+        // Detener heartbeat
+        clearInterval(heartbeatInterval);
 
-    process.on('SIGINT', gracefulShutdown);
-    process.on('SIGTERM', gracefulShutdown);
+        // Desregistrar de Consul
+        console.log('📤 Deregistering from Consul...');
+        await consul.agent.service.deregister(serviceId);
+        console.log('✅ Service deregistered');
 
-  } catch (error) {
-    console.error('❌ Error registering with Consul:', error.message);
-    console.log('⚠️  Service will run without Consul registration');
+        process.exit(0);
+      };
+
+      process.on('SIGINT', gracefulShutdown);
+      process.on('SIGTERM', gracefulShutdown);
+
+    } catch (error) {
+      console.error('❌ Error registering with Consul:', error.message);
+      console.log('⚠️  Service will run without Consul registration');
+    }
+  } else {
+    console.log(`ℹ️  Consul registration skipped (DISCOVERY_MODE=${process.env.DISCOVERY_MODE || 'not set'})`);
   }
 }
 

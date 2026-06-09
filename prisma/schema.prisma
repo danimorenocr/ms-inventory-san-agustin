@@ -133,6 +133,7 @@ model Lote {
   categoriasLote CategoriaLote[]
   subpartesLote  SubparteLote[]
   loteIndividual LoteIndividual?
+  registroMerma  RegistroMerma?
 
 
   alertasReglas AlertaRegla[]
@@ -256,4 +257,37 @@ model AlertaRegla {
   subparteLote       SubparteLote?    @relation(fields: [subparteLoteId], references: [id])
   loteIndividual     LoteIndividual?  @relation(fields: [loteIndividualId], references: [idLote])
   producto           ProductoBase?    @relation(fields: [productoId], references: [id])
+}
+
+/* ================================
+   SYNC QUEUE (OFFLINE-FIRST)
+================================ */
+
+model SyncQueue {
+  id        Int      @id @default(autoincrement())
+  entity    String   // ej: 'MovimientoInventario', 'Venta'
+  action    String   // ej: 'CREATE', 'UPDATE', 'DELETE'
+  payload   String   // JSON con los datos a sincronizar
+  createdAt DateTime @default(now())
+  synced    Boolean  @default(false)
+  syncedAt  DateTime?
+}
+
+model RegistroMerma {
+  id                     Int      @id @default(autoincrement())
+  idLote                 Int      @unique
+  
+  // Pesos totales
+  pesoTotalLoteKg        Float    // Peso total del lote
+  pesoTotalCategoriasKg  Float    // Suma de todas las categorías
+  pesoTotalSubpartesKg   Float    // Suma de todas las subpartes
+  
+  // Porcentajes de merma
+  porcentajeMermaLote      Float  // % merma entre peso inicial y total categorías
+  porcentajeMermaCategoria Float  // % merma entre total categorías y total subpartes
+  porcentajeMermaSubparte  Float  // % merma acumulada total
+  
+  fechaRegistro          DateTime @default(now())
+  
+  lote                   Lote     @relation(fields: [idLote], references: [id])
 }
