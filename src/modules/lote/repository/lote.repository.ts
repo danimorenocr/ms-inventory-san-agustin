@@ -9,7 +9,7 @@ export class LoteRepository {
 
   async create(createLoteDto: CreateLoteDto) {
     return this.prisma.lote.create({
-      data: createLoteDto,
+      data: createLoteDto as any,
     });
   }
 
