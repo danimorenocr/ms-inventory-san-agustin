@@ -55,10 +55,26 @@ ms-inventory/
     PORT=3002
     DATABASE_URL="postgresql://usuario:password@localhost:5432/db_inventory?schema=public"
     ```
-3.  **Generar el cliente y migrar base de datos**:
-    ```bash
+    # Generar cliente estándar
     npx prisma generate
+
+    # Ejecutar migraciones en desarrollo (Base de Datos Estándar)
     npx prisma migrate dev --name init
+
+    # Poblar base de datos estándar
+    npx prisma db seed
+    ```
+
+4.  **Configurar y sincronizar Base de Datos Local (Cliente Local/Offline)**:
+    Si estás trabajando con el esquema local (`schema.local.prisma`), utiliza los siguientes comandos:
+    ```bash
+    # Generar el cliente local personalizado (@prisma/client-local)
+    npx prisma generate --schema=./prisma/schema.local.prisma
+
+    # Crear/Sincronizar y resetear la base de datos local
+    npx prisma db push --schema=./prisma/schema.local.prisma --force-reset
+
+    # Correr el seed de la base de datos local
     npx prisma db seed
     ```
 
