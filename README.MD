@@ -77,3 +77,35 @@ ms-inventory/
 *   `/alertas` - Alertas automáticas de stock bajo y notificaciones.
 
 > 📚 **Documentación completa (Swagger)**: `http://localhost:3002/api/docs`
+## 🗄️ Manual para la configuración y actualización de Base de Datos
+
+El sistema maneja una arquitectura con una base de datos remota (cloud) y otra local (offline-first). Por tanto, en este microservicio existen **dos schemas de Prisma**:
+- `prisma/schema.prisma` (Base de datos remota / Cliente normal de Prisma)
+- `prisma/schema.local.prisma` (Base de datos local / Cliente local de Prisma)
+
+**Cada vez que necesites realizar un cambio en la base de datos (agregar tablas, columnas, etc.), DEBES seguir estrictamente estos pasos:**
+
+### 1. Actualizar ambos Schemas
+Si agregas un modelo o campo en `schema.prisma`, debes **copiar** esos mismos cambios exactamente a `schema.local.prisma`. Deben ser un espejo uno del otro (excepto por la directiva `output` en el `client` local).
+
+### 2. Sincronizar y aplicar los cambios (Push)
+Abre una terminal en la carpeta del microservicio y aplica los cambios en ambas bases de datos:
+
+```bash
+# 2.1 Aplicar cambios en la base de datos remota (Cloud)
+npx prisma db push --schema=prisma/schema.prisma
+
+# 2.2 Aplicar cambios en la base de datos local
+npx prisma db push --schema=prisma/schema.local.prisma
+```
+
+### 3. Generar los clientes de Prisma
+Finalmente, debes regenerar el código autogenerado para que TypeScript reconozca los nuevos campos y el `SyncService` funcione correctamente:
+
+```bash
+# 3.1 Generar cliente normal (@prisma/client)
+npx prisma generate --schema=prisma/schema.prisma
+
+# 3.2 Generar cliente local (@prisma/client-local)
+npx prisma generate --schema=prisma/schema.local.prisma
+```
