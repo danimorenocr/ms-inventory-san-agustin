@@ -185,6 +185,13 @@ export class LoteService {
   // 📌 REPORTE: TOTAL POR CADA SUBPARTE
   // ======================================================
   async getTotalPorSubparte() {
+    // 1. Obtener todas las subpartes del catálogo
+    const subpartesBases = await this.prisma.subparteBase.findMany({
+        where: { estado: true },
+        include: { categoria: true },
+    });
+
+    // 2. Obtener sumatorias
     const subpartes = await this.prisma.subparteLote.groupBy({
       by: ['idSubparteBase'],
       _sum: {
@@ -192,33 +199,21 @@ export class LoteService {
       },
     });
 
-    if (subpartes.length === 0) {
-        return { subpartes: [], totalGeneral: 0 };
-    }
+    const sumMap = new Map(subpartes.map(s => [s.idSubparteBase, Number(s._sum.pesoSubparteKg ?? 0)]));
 
-    const subparteIds = subpartes.map(s => s.idSubparteBase);
-    const subpartesBases = await this.prisma.subparteBase.findMany({
-        where: { id: { in: subparteIds } },
-        include: { categoria: true },
+    const resultado = subpartesBases.map(subparteBase => ({
+        idSubparteBase: subparteBase.id,
+        nombreSubparte: subparteBase.nombre || 'Desconocida',
+        categoria: subparteBase.categoria?.nombre || 'Sin categoría',
+        tipoAnimal: subparteBase.categoria?.tipoAnimal || 'Sin tipo',
+        totalKg: sumMap.get(subparteBase.id) || 0,
+    }));
+
+    // Ordenar por tipo de animal y luego por nombre
+    resultado.sort((a, b) => {
+      if (a.tipoAnimal !== b.tipoAnimal) return a.tipoAnimal.localeCompare(b.tipoAnimal);
+      return a.nombreSubparte.localeCompare(b.nombreSubparte);
     });
-
-    const subparteMap = new Map(subpartesBases.map(s => [s.id, s]));
-    const resultado = [];
-
-    for (const subparte of subpartes) {
-      const subparteBase = subparteMap.get(subparte.idSubparteBase);
-
-      resultado.push({
-        idSubparteBase: subparte.idSubparteBase,
-        nombreSubparte: subparteBase?.nombre || 'Desconocida',
-        categoria: subparteBase?.categoria?.nombre || 'Sin categoría',
-        tipoAnimal: subparteBase?.categoria?.tipoAnimal || 'Sin tipo',
-        totalKg: Number(subparte._sum.pesoSubparteKg ?? 0),
-      });
-    }
-
-    // Ordenar por total descendente
-    resultado.sort((a, b) => b.totalKg - a.totalKg);
 
     const totalGeneral = resultado.reduce((acc, item) => acc + item.totalKg, 0);
 
@@ -232,37 +227,34 @@ export class LoteService {
   // 📌 REPORTE: TOTAL POR CADA PRODUCTO BASE
   // ======================================================
   async getTotalPorProductoBase() {
+    const productosBases = await this.prisma.productoBase.findMany({
+        where: { estado: true }
+    });
+
     const productos = await this.prisma.loteIndividual.groupBy({
       by: ['idProductoBase'],
       _sum: {
         pesoKg: true,
+        unidades: true,
       },
     });
 
-    if (productos.length === 0) {
-        return { productos: [], totalGeneral: 0 };
-    }
+    const sumMap = new Map(productos.map(p => [p.idProductoBase, {
+       kg: Number(p._sum.pesoKg ?? 0),
+       un: Number(p._sum.unidades ?? 0)
+    }]));
 
-    const productoIds = productos.map(p => p.idProductoBase);
-    const productosBases = await this.prisma.productoBase.findMany({
-        where: { id: { in: productoIds } }
+    const resultado = productosBases.map(productoBase => {
+      const sums = sumMap.get(productoBase.id) || { kg: 0, un: 0 };
+      return {
+        id: productoBase.id,
+        nombre: productoBase.nombre || 'Desconocido',
+        totalKg: sums.kg,
+        totalUnidades: sums.un,
+      };
     });
 
-    const productoMap = new Map(productosBases.map(p => [p.id, p]));
-    const resultado = [];
-
-    for (const producto of productos) {
-      const productoBase = productoMap.get(producto.idProductoBase);
-
-      resultado.push({
-        id: producto.idProductoBase,
-        nombre: productoBase?.nombre || 'Desconocido',
-        totalKg: Number(producto._sum.pesoKg ?? 0),
-      });
-    }
-
-    // Ordenar por total descendente
-    resultado.sort((a, b) => b.totalKg - a.totalKg);
+    resultado.sort((a, b) => a.nombre.localeCompare(b.nombre));
 
     const totalGeneral = resultado.reduce((acc, item) => acc + item.totalKg, 0);
 
