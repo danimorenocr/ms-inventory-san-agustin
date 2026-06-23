@@ -199,7 +199,21 @@ export class LoteService {
       },
     });
 
+    // 3. Obtener categorías base que actúan como hojas (sin subpartes, ej. Cerdo)
+    const categoriasHoja = await this.prisma.categoriaBase.findMany({
+        where: { estado: true, subpartes: { none: {} } },
+    });
+
+    // 4. Obtener sumatorias de categorías
+    const categorias = await this.prisma.categoriaLote.groupBy({
+      by: ['idCategoriaBase'],
+      _sum: {
+        pesoCategoriaKg: true,
+      },
+    });
+
     const sumMap = new Map(subpartes.map(s => [s.idSubparteBase, Number(s._sum.pesoSubparteKg ?? 0)]));
+    const sumCatMap = new Map(categorias.map(c => [c.idCategoriaBase, Number(c._sum.pesoCategoriaKg ?? 0)]));
 
     const resultado = subpartesBases.map(subparteBase => ({
         idSubparteBase: subparteBase.id,
@@ -208,6 +222,17 @@ export class LoteService {
         tipoAnimal: subparteBase.categoria?.tipoAnimal || 'Sin tipo',
         totalKg: sumMap.get(subparteBase.id) || 0,
     }));
+
+    // Agregar las categorias hoja simulando que son subpartes para la UI
+    for (const cat of categoriasHoja) {
+        resultado.push({
+            idSubparteBase: cat.id + 100000, // ID virtual para evitar colisiones
+            nombreSubparte: cat.nombre,
+            categoria: cat.nombre, // Es su propia categoría primaria
+            tipoAnimal: cat.tipoAnimal || 'Sin tipo',
+            totalKg: sumCatMap.get(cat.id) || 0,
+        });
+    }
 
     // Ordenar por tipo de animal y luego por nombre
     resultado.sort((a, b) => {
