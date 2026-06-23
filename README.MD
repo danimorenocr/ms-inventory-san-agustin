@@ -109,3 +109,16 @@ npx prisma generate --schema=prisma/schema.prisma
 # 3.2 Generar cliente local (@prisma/client-local)
 npx prisma generate --schema=prisma/schema.local.prisma
 ```
+
+---
+
+## 🐷 Solución de Sincronización de Partes del Cerdo (Cortes Primarios)
+
+Dado que el módulo de desposte originalmente registraba el Cerdo únicamente como Categoría (sin Subpartes), se diseñó un script para clonar cada `CategoriaBase` del cerdo como una `SubparteBase` equivalente, permitiendo así que el sistema de ventas y la creación de productos reconozcan el inventario.
+
+Si estás configurando este repositorio en una base de datos local nueva, **debes ejecutar el siguiente script para migrar y habilitar el cerdo en el módulo de ventas**:
+
+```bash
+node fix_cerdo_subpartes.js
+```
+Este comando recorrerá las categorías del cerdo, creará sus subpartes equivalentes y trasladará el peso registrado en el inventario actual.
