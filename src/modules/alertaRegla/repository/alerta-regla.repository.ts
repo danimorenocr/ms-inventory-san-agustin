@@ -17,6 +17,7 @@ export class AlertaReglaRepository {
         subparteLote: true,
         loteIndividual: true,
         producto: true,
+        subparteBase: true,
       },
     });
   }
@@ -29,6 +30,7 @@ export class AlertaReglaRepository {
         subparteLote: true,
         loteIndividual: true,
         producto: true,
+        subparteBase: true,
       },
     });
   }
@@ -42,6 +44,7 @@ export class AlertaReglaRepository {
         subparteLote: true,
         loteIndividual: true,
         producto: true,
+        subparteBase: true,
       },
     });
   }
@@ -55,6 +58,7 @@ export class AlertaReglaRepository {
         subparteLote: true,
         loteIndividual: true,
         producto: true,
+        subparteBase: true,
       },
     });
   }
@@ -68,6 +72,7 @@ export class AlertaReglaRepository {
         subparteLote: true,
         loteIndividual: true,
         producto: true,
+        subparteBase: true,
       },
     });
   }
@@ -81,6 +86,7 @@ export class AlertaReglaRepository {
         subparteLote: true,
         loteIndividual: true,
         producto: true,
+        subparteBase: true,
       },
     });
   }
@@ -95,6 +101,7 @@ export class AlertaReglaRepository {
         subparteLote: true,
         loteIndividual: true,
         producto: true,
+        subparteBase: true,
       },
     });
   }

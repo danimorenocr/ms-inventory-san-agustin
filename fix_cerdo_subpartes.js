@@ -46,12 +46,10 @@ async function main() {
     for (const cl of categoriasLote) {
       console.log(`  -> Migrating weight ${cl.pesoCategoriaKg}kg from CategoriaLote (Lote ID: ${cl.idLote})`);
       
-      let sl = await prisma.subparteLote.findUnique({
+      let sl = await prisma.subparteLote.findFirst({
         where: {
-          idLote_idSubparteBase: {
-            idLote: cl.idLote,
-            idSubparteBase: subparte.id
-          }
+          idLote: cl.idLote,
+          idSubparteBase: subparte.id
         }
       });
 
@@ -59,19 +57,13 @@ async function main() {
         await prisma.subparteLote.create({
           data: {
             idLote: cl.idLote,
+            idCategoriaLote: cl.id,
             idSubparteBase: subparte.id,
             pesoSubparteKg: cl.pesoCategoriaKg,
-            fechaRegistro: cl.fechaRegistro || new Date()
+            fechaPesado: cl.fechaRegistro || new Date()
           }
         });
         
-        // Zero out the CategoriaLote weight to avoid double counting if UI was modified
-        // Wait, CategoriaLote still holds the sum of SubparteLotes.
-        // If we create SubparteLote, the weight should still technically be in CategoriaLote.
-        // Actually, the UI usually calculates stock from SubparteLote. 
-        // Our previous fix in `getTotalPorSubparte` was fetching CategoriaLote if it had no subpartes.
-        // Now it has subpartes! So `getTotalPorSubparte` will fetch from `SubparteLote`.
-        // This is perfectly correct! We don't need to zero out CategoriaLote because CategoriaLote is MEANT to be the sum.
         console.log(`    -> Created SubparteLote with ${cl.pesoCategoriaKg}kg`);
       } else {
         console.log(`    -> SubparteLote already exists. Skipping migration for this lote.`);

@@ -2,10 +2,14 @@ import { Injectable, NotFoundException, ConflictException } from '@nestjs/common
 import { CreateCategoriaLoteDto } from './dto/create-categorielote.dto';
 import { UpdateCategoriaLoteDto } from './dto/update-categorielote.dto';
 import { CategoriaLoteRepository } from './repository/categorielote.repository';
+import { PrismaService } from '../../infraestructure/prisma/prisma.service';
 
 @Injectable()
 export class CategoriaLoteService {
-  constructor(private readonly repository: CategoriaLoteRepository) {}
+  constructor(
+    private readonly repository: CategoriaLoteRepository,
+    private readonly prisma: PrismaService,
+  ) {}
 
   async create(createCategoriaLoteDto: CreateCategoriaLoteDto) {
     // Verificar si ya existe la categoría en el lote
@@ -45,7 +49,23 @@ export class CategoriaLoteService {
 
   async update(id: number, updateCategoriaLoteDto: UpdateCategoriaLoteDto) {
     await this.findOne(id);
-    return this.repository.update(id, updateCategoriaLoteDto);
+    const updated = await this.repository.update(id, updateCategoriaLoteDto);
+
+    // Si el peso de la categoría se actualizó, sincronizar con la subparte si es única (ej: Cerdo)
+    if (updateCategoriaLoteDto.pesoCategoriaKg !== undefined) {
+      const categoryData = await this.repository.findOne(id);
+      const subpartes = categoryData?.subpartes || [];
+      
+      if (subpartes.length === 1) {
+        await this.prisma.subparteLote.update({
+          where: { id: subpartes[0].id },
+          data: { pesoSubparteKg: updateCategoriaLoteDto.pesoCategoriaKg },
+        });
+        console.log(`🔄 Sincronizado pesoSubparteKg para la subparte única de la categoría ${id} a ${updateCategoriaLoteDto.pesoCategoriaKg} kg.`);
+      }
+    }
+
+    return updated;
   }
 
   async remove(id: number) {

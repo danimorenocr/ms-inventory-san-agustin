@@ -32,6 +32,7 @@ model SubparteBase {
   categoria     CategoriaBase @relation(fields: [idCategoriaBase], references: [id])
   subpartesLote SubparteLote[]
   productosSalidaComponentes ProductoSalidaComponente[]
+  alertasReglas AlertaRegla[]
 }
 
 /* ================================
@@ -245,6 +246,7 @@ model AlertaRegla {
   subparteLoteId     Int?
   loteIndividualId   Int?
   productoId         Int?
+  subparteBaseId     Int?
 
   tipo               String   // MINIMO_KG | PORCENTAJE | etc.
   valor              Float
@@ -257,6 +259,7 @@ model AlertaRegla {
   subparteLote       SubparteLote?    @relation(fields: [subparteLoteId], references: [id])
   loteIndividual     LoteIndividual?  @relation(fields: [loteIndividualId], references: [idLote])
   producto           ProductoBase?    @relation(fields: [productoId], references: [id])
+  subparteBase       SubparteBase?    @relation(fields: [subparteBaseId], references: [id])
 }
 
 /* ================================

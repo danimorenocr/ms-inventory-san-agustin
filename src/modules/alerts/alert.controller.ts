@@ -32,10 +32,12 @@ export class AlertController {
   @ApiQuery({ name: 'tipo', required: false, description: 'Filtrar por tipo de alerta' })
   @ApiQuery({ name: 'noLeidas', required: false, description: 'Mostrar solo alertas no leídas', type: Boolean })
   @ApiResponse({ status: 200, description: 'Lista de alertas' })
-  findAll(
+  async findAll(
     @Query('tipo') tipo?: string,
     @Query('noLeidas') noLeidas?: string,
   ) {
+    await this.alertService.checkRules();
+    
     if (noLeidas === 'true') {
       return this.alertService.findUnread();
     }

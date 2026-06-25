@@ -56,6 +56,15 @@ export class CreateAlertaReglaDto {
   productoId?: number;
 
   @ApiProperty({
+    description: 'ID de la subparte base asociada',
+    example: 1,
+    required: false,
+  })
+  @IsInt()
+  @IsOptional()
+  subparteBaseId?: number;
+
+  @ApiProperty({
     description: 'Tipo de alerta',
     enum: ['MINIMO_KG', 'PORCENTAJE', 'TIEMPO'],
     example: 'MINIMO_KG',

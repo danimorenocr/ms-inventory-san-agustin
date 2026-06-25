@@ -274,6 +274,7 @@ export class LoteService {
       return {
         id: productoBase.id,
         nombre: productoBase.nombre || 'Desconocido',
+        categoria: productoBase.categoria,
         totalKg: sums.kg,
         totalUnidades: sums.un,
       };
