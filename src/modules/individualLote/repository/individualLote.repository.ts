@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../../infraestructure/prisma/prisma.service';
-import { CreateLoteIndividualDto } from '../dto/create-individuallote.dto';
-import { UpdateLoteIndividualDto } from '../dto/update-individuallote.dto';
+import { CreateLoteIndividualDto } from '../dto/create-individualLote.dto';
+import { UpdateLoteIndividualDto } from '../dto/update-individualLote.dto';
 
 @Injectable()
 export class LoteIndividualRepository {
