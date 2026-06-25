@@ -7,11 +7,16 @@ import { SyncService } from './sync.service';
 export class CloudSyncInterceptor implements NestInterceptor {
   constructor(private readonly syncService: SyncService) {}
 
+  // Rutas que NO deben sincronizarse
+  private readonly EXCLUDED_PATHS = ['/health'];
+
   intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
     const req = context.switchToHttp().getRequest();
     
-    // Only intercept mutations, and ONLY if it's not a replay from SyncService
-    if (['POST', 'PUT', 'PATCH', 'DELETE'].includes(req.method) && req.headers['x-target-cloud'] !== 'true') {
+    const isExcluded = this.EXCLUDED_PATHS.some(p => req.url.includes(p));
+    
+    // Solo interceptar mutaciones, no replays de SyncService, y no rutas excluidas
+    if (['POST', 'PUT', 'PATCH', 'DELETE'].includes(req.method) && req.headers['x-target-cloud'] !== 'true' && !isExcluded) {
       return next.handle().pipe(
         tap(() => {
           // Normal local execution succeeded. Now queue for the cloud.

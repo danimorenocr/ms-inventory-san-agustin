@@ -80,7 +80,12 @@ export class SyncService {
           });
 
           if (!response.ok) {
-            throw new Error(`HTTP Error ${response.status}: ${await response.text()}`);
+            // 409 = ya existe en la nube (conflict) → se considera sincronizado
+            if (response.status === 409) {
+              this.logger.warn(`⚠️ Tarea ${task.id}: el recurso ya existe en la nube (409). Marcando como sincronizado.`);
+            } else {
+              throw new Error(`HTTP Error ${response.status}: ${await response.text()}`);
+            }
           }
         }
 
