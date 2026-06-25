@@ -30,76 +30,90 @@ export class SyncService {
   }
 
   /**
-   * CronJob que se ejecuta cada minuto para intentar sincronizar
-   * los datos de la cola local (SQLite) hacia la nube (Postgres)
+   * CronJob que se ejecuta cada 10 segundos para intentar sincronizar
+   * los datos de las tablas locales hacia la nube (Postgres)
    */
   @Cron(CronExpression.EVERY_MINUTE)
-  async syncPendingOperations() {
-    // 1. Buscar transacciones pendientes en SQLite
-    const pendingTasks = await this.prisma.syncQueue.findMany({
-      where: { synced: false },
-      orderBy: { createdAt: 'asc' },
-    });
-
-    if (pendingTasks.length === 0) {
-      return; // Nada que sincronizar
-    }
-
-    this.logger.log(`🔄 Iniciando sincronización de ${pendingTasks.length} tareas pendientes a la nube...`);
-
-    // 2. Comprobar si hay internet haciendo un query rápido a Postgres
+  async handleCron() {
     try {
-      await this.prismaCloud.$queryRaw`SELECT 1`;
-    } catch (error) {
-      this.logger.error(`❌ Sin conexión a internet. Sincronización pospuesta.`);
-      return;
-    }
-
-    // 3. Procesar cada tarea pendiente
-    for (const task of pendingTasks) {
+      // Comprobar si hay internet haciendo un query rápido a Postgres en la nube
       try {
-        const payload = JSON.parse(task.payload);
+        await this.prismaCloud.$queryRaw`SELECT 1`;
+      } catch (error) {
+        this.logger.warn(`❌ Sin conexión a internet (Railway). Sincronización pospuesta.`);
+        return;
+      }
 
-        // Replicar la acción HTTP localmente
-        if (task.entity === 'HttpRequest') {
-          this.logger.log(`Re-ejecutando ${payload.method} ${payload.url} en la Nube...`);
+      this.logger.log('🔄 Iniciando sincronización DIRECTA a la nube...');
+
+      const tablesToSync = [
+        'categoriaBase',
+        'productoBase',
+        'procedencia',
+        'proveedor',
+        'subparteBase',
+        'productoSalida',
+        'lote',
+        'categoriaLote',
+        'loteIndividual',
+        'subparteLote',
+        'movimientoInventario',
+        'registroMerma',
+        'alerta',
+        'alertaRegla'
+      ];
+
+      for (const table of tablesToSync) {
+        try {
+          // Obtener todos los registros locales
+          const localRecords = await (this.prisma as any)[table].findMany();
           
-          const headers: Record<string, string> = {
-            'Content-Type': 'application/json',
-            'X-Target-Cloud': 'true', // ESTO HACE QUE EL MIDDLEWARE ACTIVE PrismaCloudService
-          };
-          
-          if (payload.headers?.authorization) {
-            headers['Authorization'] = payload.headers.authorization;
-          }
+          if (localRecords && localRecords.length > 0) {
+            // Si la tabla no tiene un 'id' simple (ej. llaves compuestas), lo subimos directo
+            if (localRecords[0].id === undefined) {
+              const result = await (this.prismaCloud as any)[table].createMany({
+                data: localRecords,
+                skipDuplicates: true,
+              });
+              if (result.count > 0) {
+                this.logger.log(`✅ Sincronizados ${result.count} registros nuevos en la tabla ${table}`);
+              }
+              continue; // Saltamos a la siguiente tabla
+            }
 
-          const response = await fetch(`http://localhost:${process.env.PORT || 4001}${payload.url}`, {
-            method: payload.method,
-            headers,
-            body: payload.body ? JSON.stringify(payload.body) : undefined
-          });
+            // 1. Obtener los IDs locales
+            const localIds = localRecords.map(r => r.id);
 
-          if (!response.ok) {
-            // 409 = ya existe en la nube (conflict) → se considera sincronizado
-            if (response.status === 409) {
-              this.logger.warn(`⚠️ Tarea ${task.id}: el recurso ya existe en la nube (409). Marcando como sincronizado.`);
-            } else {
-              throw new Error(`HTTP Error ${response.status}: ${await response.text()}`);
+            // 2. Consultar qué IDs ya existen en la Nube
+            const existingInCloud = await (this.prismaCloud as any)[table].findMany({
+              where: { id: { in: localIds } },
+              select: { id: true }
+            });
+            
+            const existingIds = new Set(existingInCloud.map(r => r.id));
+
+            // 3. Filtrar para quedarse solo con los registros NUEVOS
+            const recordsToSync = localRecords.filter(r => !existingIds.has(r.id));
+
+            if (recordsToSync.length > 0) {
+              // 4. Sincronizar solo los nuevos
+              const result = await (this.prismaCloud as any)[table].createMany({
+                data: recordsToSync,
+                skipDuplicates: true,
+              });
+              if (result.count > 0) {
+                this.logger.log(`✅ Sincronizados ${result.count} registros nuevos en la tabla ${table}`);
+              }
             }
           }
+        } catch (error) {
+          this.logger.error(`❌ Error sincronizando tabla ${table}: ${error.message}`);
         }
-
-        // 4. Marcar como sincronizado en SQLite
-        await this.prisma.syncQueue.update({
-          where: { id: task.id },
-          data: { synced: true, syncedAt: new Date() },
-        });
-
-        this.logger.log(`✅ Tarea ${task.id} (${task.entity}) sincronizada.`);
-      } catch (error) {
-        this.logger.error(`❌ Error sincronizando tarea ${task.id}:`, error.message);
-        // Si hay error en un payload específico, pasamos al siguiente
       }
+
+      this.logger.log('✅ Sincronización DIRECTA finalizada.');
+    } catch (error) {
+      this.logger.error(`❌ Error general en sincronización DIRECTA: ${error.message}`);
     }
   }
 }

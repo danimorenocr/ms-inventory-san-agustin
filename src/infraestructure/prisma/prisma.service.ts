@@ -15,7 +15,9 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
     return new Proxy(this, {
       get: (target, prop) => {
         const store = syncContext.getStore();
+        require('fs').appendFileSync('proxy.log', `[PrismaProxy] prop: ${String(prop)}, store: ${JSON.stringify(store)}\n`);
         if (store?.useCloud && typeof prop === 'string' && prop !== '$connect' && prop !== '$disconnect' && prop !== 'onModuleInit' && prop !== 'onModuleDestroy') {
+          require('fs').appendFileSync('proxy.log', `[PrismaProxy] Returning cloudProp for ${prop}\n`);
           const cloudProp = (this.cloudService as any)[prop];
           if (cloudProp) {
             return cloudProp;

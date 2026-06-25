@@ -6,6 +6,7 @@ import { syncContext } from '../../infraestructure/prisma/prisma.service';
 export class SyncMiddleware implements NestMiddleware {
   use(req: Request, res: Response, next: NextFunction) {
     const useCloud = req.headers['x-target-cloud'] === 'true';
+    console.log(`[SyncMiddleware] Path: ${req.url}, x-target-cloud: ${req.headers['x-target-cloud']}, useCloud: ${useCloud}`);
     syncContext.run({ useCloud }, () => {
       next();
     });
