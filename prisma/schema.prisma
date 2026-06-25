@@ -150,7 +150,14 @@ model CategoriaLote {
   idCategoriaBase Int
   pesoCategoriaKg Float
   fechaRegistro   DateTime @default(now())
+  id              Int      @id @default(autoincrement())
+  idLote          Int
+  idCategoriaBase Int
+  pesoCategoriaKg Float
+  fechaRegistro   DateTime @default(now())
 
+  lote          Lote          @relation(fields: [idLote], references: [id])
+  categoriaBase CategoriaBase @relation(fields: [idCategoriaBase], references: [id])
   lote          Lote          @relation(fields: [idLote], references: [id])
   categoriaBase CategoriaBase @relation(fields: [idCategoriaBase], references: [id])
 
@@ -159,6 +166,12 @@ model CategoriaLote {
 }
 
 model SubparteLote {
+  id              Int      @id @default(autoincrement())
+  idLote          Int
+  idCategoriaLote Int
+  idSubparteBase  Int
+  pesoSubparteKg  Float
+  fechaPesado     DateTime @default(now())
   id              Int      @id @default(autoincrement())
   idLote          Int
   idCategoriaLote Int
