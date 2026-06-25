@@ -1,8 +1,10 @@
-import { Module } from '@nestjs/common';
-import { APP_FILTER } from '@nestjs/core';
+import { Module, MiddlewareConsumer, NestModule } from '@nestjs/common';
+import { APP_FILTER, APP_INTERCEPTOR } from '@nestjs/core';
 import { PrismaModule } from './infraestructure/prisma/prisma.module';
 import { SyncModule } from './modules/sync/sync.module';
 import { OfflineFilter } from './modules/sync/offline.filter';
+import { CloudSyncInterceptor } from './modules/sync/sync.interceptor';
+import { SyncMiddleware } from './modules/sync/sync.middleware';
 import { CategoriesBaseModule } from './modules/categoriesBase/categories.module';
 import { SubpartsModule } from './modules/subpartsBase/subparts.module';
 import { ProductsModule } from './modules/productsBase/products.module';
@@ -46,6 +48,14 @@ import { InventoryModule } from './modules/inventory/inventory.module';
       provide: APP_FILTER,
       useClass: OfflineFilter,
     },
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: CloudSyncInterceptor,
+    }
   ],
 })
-export class AppModule { }
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer.apply(SyncMiddleware).forRoutes('*');
+  }
+}

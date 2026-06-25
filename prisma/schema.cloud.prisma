@@ -1,11 +1,12 @@
 generator client {
+  output   = "../node_modules/@prisma/client-cloud"
+
   provider = "prisma-client-js"
-  output   = "../node_modules/@prisma/client-local"
 }
 
 datasource db {
   provider  = "postgresql"
-  url       = env("DATABASE_URL")
+  url       = env("DATABASE_CLOUD_URL")
 }
 
 /* ================================
@@ -33,6 +34,7 @@ model SubparteBase {
   categoria     CategoriaBase @relation(fields: [idCategoriaBase], references: [id])
   subpartesLote SubparteLote[]
   productosSalidaComponentes ProductoSalidaComponente[]
+  alertasReglas AlertaRegla[]
 }
 
 /* ================================
@@ -246,6 +248,7 @@ model AlertaRegla {
   subparteLoteId     Int?
   loteIndividualId   Int?
   productoId         Int?
+  subparteBaseId     Int?
 
   tipo               String   // MINIMO_KG | PORCENTAJE | etc.
   valor              Float
@@ -258,6 +261,7 @@ model AlertaRegla {
   subparteLote       SubparteLote?    @relation(fields: [subparteLoteId], references: [id])
   loteIndividual     LoteIndividual?  @relation(fields: [loteIndividualId], references: [idLote])
   producto           ProductoBase?    @relation(fields: [productoId], references: [id])
+  subparteBase       SubparteBase?    @relation(fields: [subparteBaseId], references: [id])
 }
 
 /* ================================

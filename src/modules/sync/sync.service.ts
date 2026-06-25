@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { PrismaService } from '../../infraestructure/prisma/prisma.service';
-import { PrismaLocalService } from '../../infraestructure/prisma/prisma-local.service';
+import { PrismaCloudService } from '../../infraestructure/prisma/prisma-cloud.service';
 
 @Injectable()
 export class SyncService {
@@ -9,7 +9,7 @@ export class SyncService {
 
   constructor(
     private readonly prisma: PrismaService, // Remote Postgres
-    private readonly prismaLocal: PrismaLocalService, // Local SQLite
+    private readonly prismaCloud: PrismaCloudService, // Cloud Postgres
   ) {}
 
   /**
@@ -18,7 +18,7 @@ export class SyncService {
   async saveToSyncQueue(entity: string, action: string, payload: any) {
     this.logger.warn(`No hay internet. Guardando operación de ${entity} en la cola local (SQLite)...`);
     
-    await this.prismaLocal.syncQueue.create({
+    await this.prisma.syncQueue.create({
       data: {
         entity,
         action,
@@ -36,7 +36,7 @@ export class SyncService {
   @Cron(CronExpression.EVERY_MINUTE)
   async syncPendingOperations() {
     // 1. Buscar transacciones pendientes en SQLite
-    const pendingTasks = await this.prismaLocal.syncQueue.findMany({
+    const pendingTasks = await this.prisma.syncQueue.findMany({
       where: { synced: false },
       orderBy: { createdAt: 'asc' },
     });
@@ -49,7 +49,7 @@ export class SyncService {
 
     // 2. Comprobar si hay internet haciendo un query rápido a Postgres
     try {
-      await this.prisma.$queryRaw`SELECT 1`;
+      await this.prismaCloud.$queryRaw`SELECT 1`;
     } catch (error) {
       this.logger.error(`❌ Sin conexión a internet. Sincronización pospuesta.`);
       return;
@@ -62,15 +62,21 @@ export class SyncService {
 
         // Replicar la acción HTTP localmente
         if (task.entity === 'HttpRequest') {
-          this.logger.log(`Re-ejecutando ${payload.method} ${payload.url}...`);
+          this.logger.log(`Re-ejecutando ${payload.method} ${payload.url} en la Nube...`);
           
+          const headers: Record<string, string> = {
+            'Content-Type': 'application/json',
+            'X-Target-Cloud': 'true', // ESTO HACE QUE EL MIDDLEWARE ACTIVE PrismaCloudService
+          };
+          
+          if (payload.headers?.authorization) {
+            headers['Authorization'] = payload.headers.authorization;
+          }
+
           const response = await fetch(`http://localhost:${process.env.PORT || 4001}${payload.url}`, {
             method: payload.method,
-            headers: {
-              'Content-Type': 'application/json',
-              'X-Offline-Sync': 'true' // Evitar bucles infinitos si falla de nuevo
-            },
-            body: JSON.stringify(payload.body)
+            headers,
+            body: payload.body ? JSON.stringify(payload.body) : undefined
           });
 
           if (!response.ok) {
@@ -79,7 +85,7 @@ export class SyncService {
         }
 
         // 4. Marcar como sincronizado en SQLite
-        await this.prismaLocal.syncQueue.update({
+        await this.prisma.syncQueue.update({
           where: { id: task.id },
           data: { synced: true, syncedAt: new Date() },
         });
