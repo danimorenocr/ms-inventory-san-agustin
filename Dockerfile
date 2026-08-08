@@ -8,6 +8,7 @@ COPY . .
 RUN npx prisma generate --schema=prisma/schema.prisma
 RUN npx prisma generate --schema=prisma/schema.local.prisma
 RUN npm run build
+RUN npx tsc prisma/seed.ts --outDir dist/prisma --module commonjs --target es2021 --esModuleInterop
 
 # Production stage
 FROM node:20-alpine
@@ -19,4 +20,4 @@ RUN npx prisma generate --schema=prisma/schema.prisma
 RUN npx prisma generate --schema=prisma/schema.local.prisma
 COPY --from=builder /app/dist ./dist
 EXPOSE 4003
-CMD ["sh", "-c", "npx prisma db push --schema=prisma/schema.prisma --accept-data-loss && npm run start"]
+CMD ["sh", "-c", "npx prisma db push --schema=prisma/schema.prisma --accept-data-loss && npx prisma db seed && npm run start"]
