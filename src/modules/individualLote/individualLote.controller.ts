@@ -11,8 +11,8 @@ import {
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiQuery } from '@nestjs/swagger';
 import { LoteIndividualService } from './individualLote.service';
-import { CreateLoteIndividualDto } from './dto/create-individuallote.dto';
-import { UpdateLoteIndividualDto } from './dto/update-individuallote.dto';
+import { CreateLoteIndividualDto } from './dto/create-individualLote.dto';
+import { UpdateLoteIndividualDto } from './dto/update-individualLote.dto';
 
 @ApiTags('Lotes Individuales')
 @Controller('lotes-individuales')

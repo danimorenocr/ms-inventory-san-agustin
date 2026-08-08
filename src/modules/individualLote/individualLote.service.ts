@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { CreateLoteIndividualDto } from './dto/create-individuallote.dto';
-import { UpdateLoteIndividualDto } from './dto/update-individuallote.dto';
+import { CreateLoteIndividualDto } from './dto/create-individualLote.dto';
+import { UpdateLoteIndividualDto } from './dto/update-individualLote.dto';
 import { LoteIndividualRepository } from './repository/individualLote.repository';
 
 @Injectable()
