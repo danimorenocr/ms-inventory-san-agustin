@@ -1,9 +1,11 @@
 import { Module } from '@nestjs/common';
 import { ScheduleModule } from '@nestjs/schedule';
 import { SyncService } from './sync.service';
+import { SyncController } from './sync.controller';
 
 @Module({
   imports: [ScheduleModule.forRoot()],
+  controllers: [SyncController],
   providers: [SyncService],
   exports: [SyncService],
 })
