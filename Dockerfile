@@ -20,4 +20,5 @@ RUN npx prisma generate --schema=prisma/schema.prisma
 RUN npx prisma generate --schema=prisma/schema.local.prisma
 COPY --from=builder /app/dist ./dist
 EXPOSE 4003
-CMD ["sh", "-c", "npx prisma db push --schema=prisma/schema.prisma --accept-data-loss && node dist/prisma/seed.js && npm run start"]
+CMD ["sh", "-c", "npx prisma db push --schema=prisma/schema.prisma --accept-data-loss && npm run start"]
+
