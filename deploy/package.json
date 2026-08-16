@@ -1,0 +1,14 @@
+{
+    "main":  "dist/index.js",
+    "name":  "ms-inventory-deploy",
+    "version":  "1.0.0",
+    "dependencies":  {
+                         "@nestjs/microservices":  "^11.1.9",
+                         "class-validator":  "^0.14.3",
+                         "class-transformer":  "^0.5.1",
+                         "pg":  "^8.16.3",
+                         "prisma":  "^6.19.0",
+                         "@nestjs/swagger":  "^11.2.3",
+                         "@prisma/client":  "^6.19.0"
+                     }
+}

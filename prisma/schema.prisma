@@ -3,46 +3,45 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
 }
 
-// ================================
-// TABLAS BASE (CATÁLOGOS)
-// ================================
+/* ================================
+   CATÁLOGOS BASE
+================================ */
 
-// Categorías generales del animal (brazo, pierna, cogote, etc.)
 model CategoriaBase {
-  id         Int     @id @default(autoincrement())
-  tipoAnimal String // res | cerdo | pollo | pescado | individual
-  nombre     String
-  estado     Boolean @default(true)
+  id                 Int             @id @default(autoincrement())
+  tipoAnimal         String          // res | cerdo | pollo | pescado | individual
+  nombre             String
+  estado             Boolean         @default(true)
 
-  subpartes      SubparteBase[]
-  categoriasLote CategoriaLote[]
+  subpartes          SubparteBase[]
 }
 
 // Subpartes “maestras” del desposte (murillo, bola, etc.)
 model SubparteBase {
-  id              Int     @id @default(autoincrement())
-  idCategoriaBase Int
-  nombre          String
-  estado          Boolean @default(true)
+  id                 Int             @id @default(autoincrement())
+  idCategoriaBase    Int
+  nombre             String
+  estado             Boolean         @default(true)
 
-  categoria CategoriaBase @relation(fields: [idCategoriaBase], references: [id])
+  categoria          CategoriaBase   @relation(fields: [idCategoriaBase], references: [id])
 
-  subpartesLote SubparteLote[]
+  subpartesLote      SubparteLote[]
 }
 
 // Productos que existen aunque no sean desposte (Ubre, pescado entero, etc.)
 model ProductoBase {
-  id        Int     @id @default(autoincrement())
-  nombre    String
-  categoria String? // vísceras, pescado, pollo, etc.
-  estado    Boolean @default(true)
+  id                 Int             @id @default(autoincrement())
+  nombre             String
+  categoria          String?         // vísceras, pescado, pollo, etc.
+  estado             Boolean         @default(true)
 
-  lotesIndividuales LoteIndividual[]
+  lotesIndividuales  LoteIndividual[]
 }
+
 
 // ================================
 // INGRESOS DE INVENTARIO
@@ -50,28 +49,29 @@ model ProductoBase {
 
 // Lote principal: res, cerdo o compra individual
 model Lote {
-  id            Int      @id @default(autoincrement())
-  tipoIngreso   String // 'matadero' | 'compra_individual'
-  tipoAnimal    String // 'res' | 'cerdo' | 'pollo' | 'pescado' | 'producto_individual'
-  procedencia   String?
-  proveedor     String?
-  guia          Boolean?
-  fotoGuia      String?
-  pesoKgInicial Float
-  pesoKgActual  Float
-  precioKg      Float?
-  precioArroba  Float?
-  limpio        Boolean?
-  sexo          String? // macho/hembra
-  clasificacion String? // novilla/vaca/novillo/toro...
-  dientes       Int?
-  fechaIngreso  DateTime @default(now())
-  idUsuario     Int
+  id                 Int              @id @default(autoincrement())
+  tipoIngreso        String           // 'matadero' | 'compra_individual'
+  tipoAnimal         String           // 'res' | 'cerdo' | 'pollo' | 'pescado' | 'producto_individual'
+  procedencia        String?
+  proveedor          String?
+  guia               Boolean?
+  fotoGuia           String?
+  pesoKgInicial      Float
+  pesoKgActual       Float
+  precioKg           Float?
+  precioArroba       Float?
+  limpio             Boolean?
+  sexo               String?          // macho/hembra
+  clasificacion      String?          // novilla/vaca/novillo/toro...
+  dientes            Int?
+  fechaIngreso       DateTime         @default(now())
+  idUsuario          Int
 
-  categoriasLote CategoriaLote[]
-  subpartesLote  SubparteLote[]
-  loteIndividual LoteIndividual?
+  categoriasLote     CategoriaLote[]
+  subpartesLote      SubparteLote[]
+  loteIndividual     LoteIndividual?
 }
+
 
 // ================================
 // DESPOSTE POR LOTE
@@ -88,7 +88,7 @@ model CategoriaLote {
   lote          Lote          @relation(fields: [idLote], references: [id])
   categoriaBase CategoriaBase @relation(fields: [idCategoriaBase], references: [id])
 
-  subpartes SubparteLote[]
+  subpartes          SubparteLote[]
 }
 
 // Subpartes asociadas a una categoría del desposte (ej: murillo, bola)
@@ -100,23 +100,36 @@ model SubparteLote {
   pesoSubparteKg  Float
   fechaPesado     DateTime @default(now())
 
-  lote          Lote          @relation(fields: [idLote], references: [id])
-  categoriaLote CategoriaLote @relation(fields: [idCategoriaLote], references: [id])
-  subparteBase  SubparteBase  @relation(fields: [idSubparteBase], references: [id])
+  lote               Lote           @relation(fields: [idLote], references: [id])
+  categoriaLote      CategoriaLote  @relation(fields: [idCategoriaLote], references: [id])
+  subparteBase       SubparteBase   @relation(fields: [idSubparteBase], references: [id])
 }
 
-// ================================
-// COMPRAS INDIVIDUALES
-// (ej: ubre, bofe, pescado entero, etc.)
-// ================================
+
+/* ================================
+   COMPRAS INDIVIDUALES
+================================ */
+
+model ProductoBase {
+  id        Int     @id @default(autoincrement())
+  nombre    String
+  categoria String?
+  estado    Boolean @default(true)
+  reservaCombosKg Float   @default(0)
+  consumidoCombosKg Float @default(0)
+
+  lotesIndividuales LoteIndividual[]
+  alertasReglas     AlertaRegla[]
+  productosSalidaComponentes ProductoSalidaComponenteIndividual[]
+}
 
 model LoteIndividual {
-  idLote         Int      @id
-  idProductoBase Int
-  pesoKg         Float
-  precioKg       Float
-  fechaRegistro  DateTime @default(now())
+  idLote             Int             @id
+  idProductoBase     Int
+  pesoKg             Float
+  precioKg           Float
+  fechaRegistro      DateTime        @default(now())
 
-  lote     Lote         @relation(fields: [idLote], references: [id])
-  producto ProductoBase @relation(fields: [idProductoBase], references: [id])
+  lote               Lote            @relation(fields: [idLote], references: [id])
+  producto           ProductoBase    @relation(fields: [idProductoBase], references: [id])
 }
