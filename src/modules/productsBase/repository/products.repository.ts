@@ -34,7 +34,10 @@ export class ProductsRepository {
   async findByCategoria(categoria: string) {
     return this.prisma.productoBase.findMany({
       where: {
-        categoria,
+        categoria: {
+          equals: categoria,
+          mode: 'insensitive',
+        } as any,
         estado: true,
       },
       include: {

@@ -29,7 +29,7 @@ export class PrismaLocalService extends PrismaLocalClient implements OnModuleIni
       'ProductoSalidaComponenteIndividual'
     ].map(m => m.toLowerCase());
 
-    this.$use(async (params, next) => {
+    (this as any).$use(async (params, next) => {
       const result = await next(params);
 
       const writeOperations = ['create', 'update', 'delete', 'createMany', 'updateMany', 'deleteMany'];
