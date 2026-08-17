@@ -7,8 +7,8 @@
     "start:dev": "npm run prisma:generate && ts-node-dev --respawn --transpile-only src/main.ts",
     "build": "npm run prisma:generate && tsc -p tsconfig.json",
     "start:prod": "node dist/main.js",
-    "prisma:generate": "npx prisma generate && npx prisma generate --schema=prisma/schema.local.prisma",
-    "prisma:local-setup": "npx prisma db push --schema=prisma/schema.local.prisma"
+    "prisma:generate": "npx prisma generate && npx prisma generate --schema=prisma/schema.local.dev",
+    "prisma:local-setup": "npx prisma db push --schema=prisma/schema.local.dev"
   },
   "dependencies": {
     "@nestjs/common": "^11.1.9",
