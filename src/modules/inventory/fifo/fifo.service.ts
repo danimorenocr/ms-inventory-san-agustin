@@ -1,5 +1,5 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
-import { PrismaService } from '../../../infraestructure/prisma/prisma.service';
+import { PrismaLocalService } from '../../../infraestructure/prisma/prisma-local.service';
 
 // Tipo para la "bolsa lógica de stock"
 interface ItemStock {
@@ -12,7 +12,7 @@ interface ItemStock {
 
 @Injectable()
 export class FIFOService {
-  constructor(private prisma: PrismaService) { }
+  constructor(private prisma: PrismaLocalService) { }
 
   /**
    * Asigna automáticamente componentes a un combo usando FIFO sobre reservas
@@ -838,7 +838,6 @@ export class FIFOService {
               where: {
                 nombre: {
                   equals: subparteBase.nombre,
-                  mode: 'insensitive',
                 },
               },
             });

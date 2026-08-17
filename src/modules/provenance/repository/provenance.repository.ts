@@ -1,11 +1,11 @@
 import { Injectable } from '@nestjs/common';
-import { PrismaService } from '../../../infraestructure/prisma/prisma.service';
+import { PrismaLocalService } from '../../../infraestructure/prisma/prisma-local.service';
 import { CreateProvenanceDto } from '../dto/create-provenance.dto';
 import { UpdateProvenanceDto } from '../dto/update-provenance.dto';
 
 @Injectable()
 export class ProvenanceRepository {
-	constructor(private readonly prisma: PrismaService) {}
+	constructor(private readonly prisma: PrismaLocalService) {}
 
 	async create(createProvenanceDto: CreateProvenanceDto) {
 		return this.prisma.procedencia.create({

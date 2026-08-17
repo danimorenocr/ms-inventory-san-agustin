@@ -1,5 +1,5 @@
 import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
-import { PrismaService } from '../../infraestructure/prisma/prisma.service';
+import { PrismaLocalService } from '../../infraestructure/prisma/prisma-local.service';
 import { FIFOService } from './fifo/fifo.service';
 import { ConsumeProductoSalidaDto } from './dto/consume-product.dto';
 import { DescontarProductoSalidaDto } from './dto/descontar-producto-salida.dto';
@@ -9,7 +9,7 @@ import { ValidateStockDto } from './dto/validate-stock.dto';
 @Injectable()
 export class InventoryService {
   constructor(
-    private prisma: PrismaService,
+    private prisma: PrismaLocalService,
     private fifo: FIFOService,
   ) { }
 

@@ -1,11 +1,11 @@
 import { Injectable } from '@nestjs/common';
-import { PrismaService } from '../../../infraestructure/prisma/prisma.service';
+import { PrismaLocalService } from '../../../infraestructure/prisma/prisma-local.service';
 import { CreatesubpartDto } from '../dto/create-subpart.dto';
 import { UpdatesubpartDto } from '../dto/update-subpart.dto';
 
 @Injectable()
 export class SubpartsRepository {
-  constructor(private readonly prisma: PrismaService) { }
+  constructor(private readonly prisma: PrismaLocalService) { }
 
   async create(createSubpartDto: CreatesubpartDto) {
     return this.prisma.subparteBase.create({

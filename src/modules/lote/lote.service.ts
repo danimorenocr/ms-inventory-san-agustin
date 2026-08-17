@@ -2,13 +2,13 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { CreateLoteDto } from './dto/create-lote.dto';
 import { UpdateLoteDto } from './dto/update-lote.dto';
 import { LoteRepository } from './repository/lote.repository';
-import { PrismaService } from '../../infraestructure/prisma/prisma.service';
+import { PrismaLocalService } from '../../infraestructure/prisma/prisma-local.service';
 
 @Injectable()
 export class LoteService {
   constructor(
     private readonly repository: LoteRepository,
-    private readonly prisma: PrismaService,
+    private readonly prisma: PrismaLocalService,
   ) { }
 
   // ======================================================

@@ -2,13 +2,13 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { CreateAlertaDto } from './dto/create-alert.dto';
 import { UpdateAlertaDto } from './dto/update-alert.dto';
 import { AlertRepository } from './repository/alert.repository';
-import { PrismaService } from '../../infraestructure/prisma/prisma.service';
+import { PrismaLocalService } from '../../infraestructure/prisma/prisma-local.service';
 
 @Injectable()
 export class AlertService {
   constructor(
     private readonly repository: AlertRepository,
-    private readonly prisma: PrismaService,
+    private readonly prisma: PrismaLocalService,
   ) {}
 
   async checkRules() {
@@ -38,12 +38,12 @@ export class AlertService {
 
         // 2. Obtener todas las subpartes y productos que comparten este nombre (case-insensitive)
         const matchingSubpartes = await this.prisma.subparteBase.findMany({
-          where: { nombre: { equals: targetName, mode: 'insensitive' } },
+          where: { nombre: { equals: targetName } },
         });
         const subparteIds = matchingSubpartes.map((s) => s.id);
 
         const matchingProductos = await this.prisma.productoBase.findMany({
-          where: { nombre: { equals: targetName, mode: 'insensitive' } },
+          where: { nombre: { equals: targetName } },
         });
         const productoIds = matchingProductos.map((p) => p.id);
 

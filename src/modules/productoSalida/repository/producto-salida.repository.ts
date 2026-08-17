@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { PrismaService } from '../../../infraestructure/prisma/prisma.service';
+import { PrismaLocalService } from '../../../infraestructure/prisma/prisma-local.service';
 import { CreateProductoSalidaDto } from '../dto/create-producto-salida.dto';
 import { UpdateProductoSalidaDto } from '../dto/update-producto-salida.dto';
 import { AddComponenteSubparteDto } from '../dto/add-componente-subparte.dto';
@@ -9,7 +9,7 @@ import { AddComponenteIndividualDto } from '../dto/add-componente-individual.dto
 
 @Injectable()
 export class ProductoSalidaRepository {
-  constructor(private prisma: PrismaService) { }
+  constructor(private prisma: PrismaLocalService) { }
 
   // ========== PRODUCTOS SALIDA ==========
   async create(data: CreateProductoSalidaDto) {

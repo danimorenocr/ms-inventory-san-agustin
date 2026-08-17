@@ -1,11 +1,11 @@
 import { Injectable } from '@nestjs/common';
-import { PrismaService } from '../../../infraestructure/prisma/prisma.service';
+import { PrismaLocalService } from '../../../infraestructure/prisma/prisma-local.service';
 import { CreateLoteIndividualDto } from '../dto/create-individualLote.dto';
 import { UpdateLoteIndividualDto } from '../dto/update-individualLote.dto';
 
 @Injectable()
 export class LoteIndividualRepository {
-  constructor(private readonly prisma: PrismaService) { }
+  constructor(private readonly prisma: PrismaLocalService) { }
 
   async create(createLoteIndividualDto: CreateLoteIndividualDto) {
     return this.prisma.loteIndividual.create({

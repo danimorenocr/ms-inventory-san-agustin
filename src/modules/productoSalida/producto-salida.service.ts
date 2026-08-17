@@ -7,7 +7,7 @@ import { AddComponenteLoteDto } from './dto/add-componente-lote.dto';
 import { AddComponenteSubparteLoteDto } from './dto/add-componente-subparte-lote.dto';
 import { AddComponenteIndividualDto } from './dto/add-componente-individual.dto';
 import { FIFOService } from '../inventory/fifo/fifo.service';
-import { PrismaService } from '../../infraestructure/prisma/prisma.service';
+import { PrismaLocalService } from '../../infraestructure/prisma/prisma-local.service';
 
 @Injectable()
 export class ProductoSalidaService {
@@ -16,7 +16,7 @@ export class ProductoSalidaService {
   constructor(
     private readonly repository: ProductoSalidaRepository,
     private readonly fifoService: FIFOService,
-    private readonly prisma: PrismaService,
+    private readonly prisma: PrismaLocalService,
   ) { }
 
   async create(createProductoSalidaDto: CreateProductoSalidaDto) {

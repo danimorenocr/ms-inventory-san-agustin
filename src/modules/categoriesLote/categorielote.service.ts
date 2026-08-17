@@ -2,13 +2,13 @@ import { Injectable, NotFoundException, ConflictException } from '@nestjs/common
 import { CreateCategoriaLoteDto } from './dto/create-categorielote.dto';
 import { UpdateCategoriaLoteDto } from './dto/update-categorielote.dto';
 import { CategoriaLoteRepository } from './repository/categorielote.repository';
-import { PrismaService } from '../../infraestructure/prisma/prisma.service';
+import { PrismaLocalService } from '../../infraestructure/prisma/prisma-local.service';
 
 @Injectable()
 export class CategoriaLoteService {
   constructor(
     private readonly repository: CategoriaLoteRepository,
-    private readonly prisma: PrismaService,
+    private readonly prisma: PrismaLocalService,
   ) {}
 
   async create(createCategoriaLoteDto: CreateCategoriaLoteDto) {

@@ -1,11 +1,11 @@
 import { Injectable } from '@nestjs/common';
-import { PrismaService } from '../../../infraestructure/prisma/prisma.service';
+import { PrismaLocalService } from '../../../infraestructure/prisma/prisma-local.service';
 import { CreateAlertaDto } from '../dto/create-alert.dto';
 import { UpdateAlertaDto } from '../dto/update-alert.dto';
 
 @Injectable()
 export class AlertRepository {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaLocalService) {}
 
   async create(createAlertaDto: CreateAlertaDto) {
     return this.prisma.alerta.create({

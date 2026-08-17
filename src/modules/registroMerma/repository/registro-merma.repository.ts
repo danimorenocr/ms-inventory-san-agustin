@@ -1,11 +1,11 @@
 import { Injectable } from '@nestjs/common';
-import { PrismaService } from '../../../infraestructure/prisma/prisma.service';
+import { PrismaLocalService } from '../../../infraestructure/prisma/prisma-local.service';
 import { CreateRegistroMermaDto } from '../dto/create-registro-merma.dto';
 import { UpdateRegistroMermaDto } from '../dto/update-registro-merma.dto';
 
 @Injectable()
 export class RegistroMermaRepository {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaLocalService) {}
 
   async create(dto: CreateRegistroMermaDto) {
     return this.prisma.registroMerma.create({

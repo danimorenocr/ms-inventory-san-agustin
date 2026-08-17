@@ -1,11 +1,11 @@
 import { Injectable } from '@nestjs/common';
-import { PrismaService } from '../../../infraestructure/prisma/prisma.service';
+import { PrismaLocalService } from '../../../infraestructure/prisma/prisma-local.service';
 import { CreateProductoSalidaComponenteDto } from '../../productsBase/dto/create-producto-salida-componente.dto';
 import { UpdateProductoSalidaComponenteDto } from '../../productsBase/dto/update-producto-salida-componente.dto';
 
 @Injectable()
 export class ProductoSalidaComponenteRepository {
-  constructor(private prisma: PrismaService) {}
+  constructor(private prisma: PrismaLocalService) {}
 
   async create(createProductoSalidaComponenteDto: CreateProductoSalidaComponenteDto) {
     return this.prisma.productoSalidaComponente.create({

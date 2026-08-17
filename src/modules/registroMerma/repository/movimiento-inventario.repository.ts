@@ -1,11 +1,11 @@
 import { Injectable } from '@nestjs/common';
-import { PrismaService } from '../../../infraestructure/prisma/prisma.service';
+import { PrismaLocalService } from '../../../infraestructure/prisma/prisma-local.service';
 import { CreateMovimientoInventarioDto } from '../dto/create-movimiento-inventario.dto';
 import { UpdateMovimientoInventarioDto } from '../dto/update-movimiento-inventario.dto';
 
 @Injectable()
 export class MovimientoInventarioRepository {
-  constructor(private prisma: PrismaService) {}
+  constructor(private prisma: PrismaLocalService) {}
 
   async create(createMovimientoInventarioDto: CreateMovimientoInventarioDto) {
     return this.prisma.movimientoInventario.create({

@@ -1,11 +1,11 @@
 import { Injectable } from '@nestjs/common';
-import { PrismaService } from '../../../infraestructure/prisma/prisma.service';
+import { PrismaLocalService } from '../../../infraestructure/prisma/prisma-local.service';
 import { CreateCategoriaLoteDto } from '../dto/create-categorielote.dto';
 import { UpdateCategoriaLoteDto } from '../dto/update-categorielote.dto';
 
 @Injectable()
 export class CategoriaLoteRepository {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaLocalService) {}
 
   async create(createCategoriaLoteDto: CreateCategoriaLoteDto) {
     return this.prisma.categoriaLote.create({
