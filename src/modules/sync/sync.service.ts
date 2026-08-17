@@ -109,6 +109,9 @@ export class SyncService implements OnModuleInit {
       case 'Proveedor':           return this.syncProveedorCloud(action, payload);
       case 'Procedencia':         return this.syncProcedenciaCloud(action, payload);
       case 'RegistroMerma':       return this.syncRegistroMermaCloud(action, payload);
+      case 'ProductoSalida':      return this.syncProductoSalidaCloud(action, payload);
+      case 'ProductoSalidaComponente': return this.syncProductoSalidaComponenteCloud(action, payload);
+      case 'ProductoSalidaComponenteIndividual': return this.syncProductoSalidaComponenteIndividualCloud(action, payload);
       default:
         this.logger.warn(`⚠️ Entidad desconocida para sync: ${entity}`);
     }
@@ -188,6 +191,27 @@ export class SyncService implements OnModuleInit {
     if (action === 'CREATE') return this.prismaCloud.registroMerma.create({ data });
     if (action === 'UPDATE') return this.prismaCloud.registroMerma.update({ where: { id }, data });
     if (action === 'DELETE') return this.prismaCloud.registroMerma.delete({ where: { id } });
+  }
+
+  private async syncProductoSalidaCloud(action: string, payload: any) {
+    const { id, componentes, componentesIndividual, ...data } = payload;
+    if (action === 'CREATE') return this.prismaCloud.productoSalida.create({ data: { id, ...data } });
+    if (action === 'UPDATE') return this.prismaCloud.productoSalida.update({ where: { id }, data });
+    if (action === 'DELETE') return this.prismaCloud.productoSalida.delete({ where: { id } });
+  }
+
+  private async syncProductoSalidaComponenteCloud(action: string, payload: any) {
+    const { id, productoSalida, subparteBase, ...data } = payload;
+    if (action === 'CREATE') return this.prismaCloud.productoSalidaComponente.create({ data: { id, ...data } });
+    if (action === 'UPDATE') return this.prismaCloud.productoSalidaComponente.update({ where: { id }, data });
+    if (action === 'DELETE') return this.prismaCloud.productoSalidaComponente.delete({ where: { id } });
+  }
+
+  private async syncProductoSalidaComponenteIndividualCloud(action: string, payload: any) {
+    const { id, productoSalida, productoBase, ...data } = payload;
+    if (action === 'CREATE') return this.prismaCloud.productoSalidaComponenteIndividual.create({ data: { id, ...data } });
+    if (action === 'UPDATE') return this.prismaCloud.productoSalidaComponenteIndividual.update({ where: { id }, data });
+    if (action === 'DELETE') return this.prismaCloud.productoSalidaComponenteIndividual.delete({ where: { id } });
   }
 
   // ═══════════════════════════════════════════════════════════
