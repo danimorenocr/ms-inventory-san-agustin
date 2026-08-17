@@ -2,9 +2,9 @@ import { Injectable, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
 import { PrismaClient as PrismaLocalClient } from '@prisma/client-local';
 
 @Injectable()
-export class PrismaLocalService extends PrismaLocalClient implements OnModuleInit, OnModuleDestroy {
+export class PrismaLocalService implements OnModuleInit, OnModuleDestroy {
   constructor() {
-    super({
+    const rawClient = new PrismaLocalClient({
       datasources: {
         db: {
           url: process.env.DATABASE_LOCAL_URL,
@@ -29,63 +29,75 @@ export class PrismaLocalService extends PrismaLocalClient implements OnModuleIni
       'ProductoSalidaComponenteIndividual'
     ].map(m => m.toLowerCase());
 
-    (this as any).$use(async (params, next) => {
-      const result = await next(params);
+    const extendedClient = rawClient.$extends({
+      query: {
+        $allModels: {
+          async $allOperations({ model, operation, args, query }) {
+            const result = await query(args);
 
-      const writeOperations = ['create', 'update', 'delete', 'createMany', 'updateMany', 'deleteMany'];
-      if (
-        writeOperations.includes(params.action) &&
-        params.model &&
-        syncableModels.includes(params.model.toLowerCase())
-      ) {
-        try {
-          let action = 'CREATE';
-          if (params.action.startsWith('update')) action = 'UPDATE';
-          if (params.action.startsWith('delete')) action = 'DELETE';
+            const writeOperations = ['create', 'update', 'delete', 'createMany', 'updateMany', 'deleteMany'];
+            if (
+              writeOperations.includes(operation) &&
+              syncableModels.includes(model.toLowerCase())
+            ) {
+              try {
+                let action = 'CREATE';
+                if (operation.startsWith('update')) action = 'UPDATE';
+                if (operation.startsWith('delete')) action = 'DELETE';
 
-          let payload = result;
-          if (params.action === 'delete' || params.action === 'deleteMany') {
-            payload = result || params.args?.where;
-          }
+                let payload = result;
+                if (operation === 'delete' || operation === 'deleteMany') {
+                  payload = result || args?.where;
+                }
 
-          if (params.action.endsWith('Many')) {
-            if (params.action === 'createMany' && Array.isArray(params.args?.data)) {
-              for (const item of params.args.data) {
-                await this.syncQueue.create({
-                  data: {
-                    entity: params.model,
-                    action: 'CREATE',
-                    payload: JSON.stringify(item),
-                  },
-                });
+                if (operation.endsWith('Many')) {
+                  if (operation === 'createMany' && Array.isArray(args?.data)) {
+                    for (const item of args.data) {
+                      await rawClient.syncQueue.create({
+                        data: {
+                          entity: model,
+                          action: 'CREATE',
+                          payload: JSON.stringify(item),
+                        },
+                      });
+                    }
+                    return result;
+                  }
+                }
+
+                if (payload) {
+                  await rawClient.syncQueue.create({
+                    data: {
+                      entity: model,
+                      action,
+                      payload: JSON.stringify(payload),
+                    },
+                  });
+                }
+              } catch (err) {
+                console.error('❌ Error en la extensión de sincronización:', err);
               }
-              return result;
             }
-          }
 
-          if (payload) {
-            await this.syncQueue.create({
-              data: {
-                entity: params.model,
-                action,
-                payload: JSON.stringify(payload),
-              },
-            });
+            return result;
           }
-        } catch (err) {
-          console.error('❌ Error en el middleware de sincronización:', err);
         }
       }
-
-      return result;
     });
+
+    // Inyectar dinámicamente los NestJS hooks en el cliente extendido
+    (extendedClient as any).onModuleInit = async () => {
+      await rawClient.$connect();
+    };
+
+    (extendedClient as any).onModuleDestroy = async () => {
+      await rawClient.$disconnect();
+    };
+
+    return extendedClient as any;
   }
 
-  async onModuleInit() {
-    await this.$connect();
-  }
-
-  async onModuleDestroy() {
-    await this.$disconnect();
-  }
+  // Métodos requeridos por la interfaz OnModuleInit y OnModuleDestroy de TypeScript
+  async onModuleInit() {}
+  async onModuleDestroy() {}
 }
