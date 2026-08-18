@@ -34,7 +34,7 @@ export class ProductsRepository {
   async findByCategoria(categoria: string) {
     return this.prisma.productoBase.findMany({
       where: {
-        categoria: categoria,
+        categoria: categoria.toLowerCase(),
         estado: true,
       },
       include: {
