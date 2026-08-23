@@ -8,6 +8,9 @@ export class SyncService implements OnModuleInit {
   private readonly logger = new Logger(SyncService.name);
   private readonly prismaCloud: PrismaCloudClient;
   private syncing = false;
+  private pullInProgress = false;
+  private pullCompleted = false;
+  private pullError: string | null = null;
 
   constructor(
     private readonly prismaLocal: PrismaLocalService, // Local SQLite — SIEMPRE disponible
@@ -27,7 +30,18 @@ export class SyncService implements OnModuleInit {
 
   async onModuleInit() {
     this.logger.log('🚀 Iniciando pull automático desde Railway al arrancar...');
-    await this.pullRemoteChanges();
+    // Ejecutar en segundo plano para no bloquear el inicio del microservicio
+    this.pullRemoteChanges().catch(err => {
+      this.logger.error('❌ Error en el pull inicial:', err.message);
+    });
+  }
+
+  getStatus() {
+    return {
+      pullInProgress: this.pullInProgress,
+      pullCompleted: this.pullCompleted,
+      pullError: this.pullError,
+    };
   }
 
   // ═══════════════════════════════════════════════════════════
@@ -219,6 +233,12 @@ export class SyncService implements OnModuleInit {
   // ═══════════════════════════════════════════════════════════
 
   async pullRemoteChanges() {
+    if (this.pullInProgress) {
+      this.logger.warn('⚠️ Pull de Inventario ya está en progreso. Omitiendo...');
+      return;
+    }
+    this.pullInProgress = true;
+    this.pullError = null;
     this.logger.log('📥 Iniciando descarga completa de datos desde Railway (Inventario)...');
     try {
       // 1. CategoriaBase
@@ -348,9 +368,13 @@ export class SyncService implements OnModuleInit {
       }
       this.logger.log(`⬇️ Pull: ${lotesIndiv.length} lotes individuales`);
 
+      this.pullCompleted = true;
       this.logger.log('✅ Pull completo desde Railway → SQLite (Inventario).');
     } catch (err) {
+      this.pullError = err.message;
       this.logger.error('❌ Error durante el pull de inventario:', err.message);
+    } finally {
+      this.pullInProgress = false;
     }
   }
 }
