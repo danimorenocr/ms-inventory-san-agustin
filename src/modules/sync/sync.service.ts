@@ -284,12 +284,41 @@ export class SyncService implements OnModuleInit {
       const componentes = await this.prismaCloud.productoSalidaComponente.findMany();
       for (const comp of componentes) {
         await this.prismaLocal.productoSalidaComponente.upsert({
-          where: { id: comp.id },
-          update: { productoSalidaId: comp.productoSalidaId, subparteBaseId: comp.subparteBaseId, factorAsignacion: comp.factorAsignacion },
-          create: comp,
+          where: {
+            productoSalidaId_subparteBaseId: {
+              productoSalidaId: comp.productoSalidaId,
+              subparteBaseId: comp.subparteBaseId,
+            },
+          },
+          update: { factorAsignacion: comp.factorAsignacion },
+          create: {
+            productoSalidaId: comp.productoSalidaId,
+            subparteBaseId: comp.subparteBaseId,
+            factorAsignacion: comp.factorAsignacion,
+          },
         });
       }
       this.logger.log(`⬇️ Pull: ${componentes.length} componentes de productos`);
+
+      // 4b. ProductoSalidaComponenteIndividual
+      const componentesInd = await this.prismaCloud.productoSalidaComponenteIndividual.findMany();
+      for (const comp of componentesInd) {
+        await this.prismaLocal.productoSalidaComponenteIndividual.upsert({
+          where: {
+            productoSalidaId_productoBaseId: {
+              productoSalidaId: comp.productoSalidaId,
+              productoBaseId: comp.productoBaseId,
+            },
+          },
+          update: { factorAsignacion: comp.factorAsignacion },
+          create: {
+            productoSalidaId: comp.productoSalidaId,
+            productoBaseId: comp.productoBaseId,
+            factorAsignacion: comp.factorAsignacion,
+          },
+        });
+      }
+      this.logger.log(`⬇️ Pull: ${componentesInd.length} componentes individuales de productos`);
 
       // 5. Procedencia
       const procedencias = await this.prismaCloud.procedencia.findMany();
