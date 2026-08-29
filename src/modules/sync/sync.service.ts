@@ -269,7 +269,18 @@ export class SyncService implements OnModuleInit {
       }
       this.logger.log(`⬇️ Pull: ${subpartes.length} subpartes base`);
 
-      // 3. ProductoSalida
+      // 3. ProductoBase
+      const bases = await this.prismaCloud.productoBase.findMany();
+      for (const b of bases) {
+        await this.prismaLocal.productoBase.upsert({
+          where: { id: b.id },
+          update: { nombre: b.nombre, categoria: b.categoria, estado: b.estado, reservaCombosKg: b.reservaCombosKg, consumidoCombosKg: b.consumidoCombosKg },
+          create: b,
+        });
+      }
+      this.logger.log(`⬇️ Pull: ${bases.length} productos base`);
+
+      // 4. ProductoSalida
       const productosSalida = await this.prismaCloud.productoSalida.findMany();
       for (const prod of productosSalida) {
         await this.prismaLocal.productoSalida.upsert({
@@ -280,7 +291,7 @@ export class SyncService implements OnModuleInit {
       }
       this.logger.log(`⬇️ Pull: ${productosSalida.length} productos de salida`);
 
-      // 4. ProductoSalidaComponente
+      // 5. ProductoSalidaComponente
       const componentes = await this.prismaCloud.productoSalidaComponente.findMany();
       for (const comp of componentes) {
         await this.prismaLocal.productoSalidaComponente.upsert({
@@ -300,7 +311,7 @@ export class SyncService implements OnModuleInit {
       }
       this.logger.log(`⬇️ Pull: ${componentes.length} componentes de productos`);
 
-      // 4b. ProductoSalidaComponenteIndividual
+      // 6. ProductoSalidaComponenteIndividual
       const componentesInd = await this.prismaCloud.productoSalidaComponenteIndividual.findMany();
       for (const comp of componentesInd) {
         await this.prismaLocal.productoSalidaComponenteIndividual.upsert({
@@ -320,7 +331,7 @@ export class SyncService implements OnModuleInit {
       }
       this.logger.log(`⬇️ Pull: ${componentesInd.length} componentes individuales de productos`);
 
-      // 5. Procedencia
+      // 7. Procedencia
       const procedencias = await this.prismaCloud.procedencia.findMany();
       for (const proc of procedencias) {
         await this.prismaLocal.procedencia.upsert({
@@ -331,7 +342,7 @@ export class SyncService implements OnModuleInit {
       }
       this.logger.log(`⬇️ Pull: ${procedencias.length} procedencias`);
 
-      // 6. Proveedor
+      // 8. Proveedor
       const proveedores = await this.prismaCloud.proveedor.findMany();
       for (const prov of proveedores) {
         await this.prismaLocal.proveedor.upsert({
@@ -342,7 +353,7 @@ export class SyncService implements OnModuleInit {
       }
       this.logger.log(`⬇️ Pull: ${proveedores.length} proveedores`);
 
-      // 7. Lote
+      // 9. Lote
       const lotes = await this.prismaCloud.lote.findMany();
       for (const l of lotes) {
         await this.prismaLocal.lote.upsert({
@@ -353,7 +364,7 @@ export class SyncService implements OnModuleInit {
       }
       this.logger.log(`⬇️ Pull: ${lotes.length} lotes`);
 
-      // 8. CategoriaLote
+      // 10. CategoriaLote
       const catLotes = await this.prismaCloud.categoriaLote.findMany();
       for (const cl of catLotes) {
         await this.prismaLocal.categoriaLote.upsert({
@@ -364,7 +375,7 @@ export class SyncService implements OnModuleInit {
       }
       this.logger.log(`⬇️ Pull: ${catLotes.length} categorías de lotes`);
 
-      // 9. SubparteLote
+      // 11. SubparteLote
       const subLotes = await this.prismaCloud.subparteLote.findMany();
       for (const sl of subLotes) {
         await this.prismaLocal.subparteLote.upsert({
@@ -374,17 +385,6 @@ export class SyncService implements OnModuleInit {
         });
       }
       this.logger.log(`⬇️ Pull: ${subLotes.length} subpartes de lotes`);
-
-      // 10. ProductoBase
-      const bases = await this.prismaCloud.productoBase.findMany();
-      for (const b of bases) {
-        await this.prismaLocal.productoBase.upsert({
-          where: { id: b.id },
-          update: { nombre: b.nombre, categoria: b.categoria, estado: b.estado, reservaCombosKg: b.reservaCombosKg, consumidoCombosKg: b.consumidoCombosKg },
-          create: b,
-        });
-      }
-      this.logger.log(`⬇️ Pull: ${bases.length} productos base`);
 
       // 11. LoteIndividual
       const lotesIndiv = await this.prismaCloud.loteIndividual.findMany();
