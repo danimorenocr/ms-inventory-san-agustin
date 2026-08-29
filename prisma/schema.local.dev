@@ -30,7 +30,7 @@ model SubparteBase {
   reservaCombosKg Float   @default(0)
   consumidoCombosKg Float @default(0)
 
-  categoria     CategoriaBase @relation(fields: [idCategoriaBase], references: [id])
+  categoria     CategoriaBase @relation(fields: [idCategoriaBase], references: [id], onDelete: Cascade)
   subpartesLote SubparteLote[]
   productosSalidaComponentes ProductoSalidaComponente[]
   alertasReglas AlertaRegla[]
@@ -59,7 +59,7 @@ model ProductoSalidaComponente {
   factorAsignacion Float @default(0)
 
   productoSalida ProductoSalida @relation(fields: [productoSalidaId], references: [id], onDelete: Cascade)
-  subparteBase   SubparteBase   @relation(fields: [subparteBaseId], references: [id])
+  subparteBase   SubparteBase   @relation(fields: [subparteBaseId], references: [id], onDelete: Cascade)
   @@unique([productoSalidaId, subparteBaseId])
 }
 
@@ -71,7 +71,7 @@ model ProductoSalidaComponenteIndividual {
   factorAsignacion Float @default(0)
 
   productoSalida   ProductoSalida @relation(fields: [productoSalidaId], references: [id], onDelete: Cascade)
-  productoBase     ProductoBase   @relation(fields: [productoBaseId], references: [id])
+  productoBase     ProductoBase   @relation(fields: [productoBaseId], references: [id], onDelete: Cascade)
   @@unique([productoSalidaId, productoBaseId])
 }
 
@@ -111,7 +111,7 @@ model Lote {
   tipoIngreso   String
   tipoAnimal    String
   procedenciaId Int?
-  procedencia   Procedencia? @relation(fields: [procedenciaId], references: [id])
+  procedencia   Procedencia? @relation(fields: [procedenciaId], references: [id], onDelete: SetNull)
   guia          Boolean?
   fotoGuia      String?
   pesoKgInicial     Float
@@ -130,7 +130,7 @@ model Lote {
   idUsuario     Int
 
   proveedorId Int
-  proveedor   Proveedor @relation(fields: [proveedorId], references: [id])
+  proveedor   Proveedor @relation(fields: [proveedorId], references: [id], onDelete: Cascade)
 
   categoriasLote CategoriaLote[]
   subpartesLote  SubparteLote[]
@@ -152,8 +152,8 @@ model CategoriaLote {
   pesoCategoriaKg Float
   fechaRegistro   DateTime @default(now())
 
-  lote          Lote          @relation(fields: [idLote], references: [id])
-  categoriaBase CategoriaBase @relation(fields: [idCategoriaBase], references: [id])
+  lote          Lote          @relation(fields: [idLote], references: [id], onDelete: Cascade)
+  categoriaBase CategoriaBase @relation(fields: [idCategoriaBase], references: [id], onDelete: Cascade)
 
   subpartes SubparteLote[]
   alertasReglas AlertaRegla[]
@@ -167,9 +167,9 @@ model SubparteLote {
   pesoSubparteKg  Float
   fechaPesado     DateTime @default(now())
 
-  lote          Lote          @relation(fields: [idLote], references: [id])
-  categoriaLote CategoriaLote @relation(fields: [idCategoriaLote], references: [id])
-  subparteBase  SubparteBase  @relation(fields: [idSubparteBase], references: [id])
+  lote          Lote          @relation(fields: [idLote], references: [id], onDelete: Cascade)
+  categoriaLote CategoriaLote @relation(fields: [idCategoriaLote], references: [id], onDelete: Cascade)
+  subparteBase  SubparteBase  @relation(fields: [idSubparteBase], references: [id], onDelete: Cascade)
 
   movimientos MovimientoInventario[]
 
@@ -203,10 +203,10 @@ model LoteIndividual {
   fechaRegistro  DateTime @default(now())
 
   procedenciaId Int?
-  procedencia   Procedencia? @relation(fields: [procedenciaId], references: [id])
+  procedencia   Procedencia? @relation(fields: [procedenciaId], references: [id], onDelete: SetNull)
 
-  lote     Lote         @relation(fields: [idLote], references: [id])
-  producto ProductoBase @relation(fields: [idProductoBase], references: [id])
+  lote     Lote         @relation(fields: [idLote], references: [id], onDelete: Cascade)
+  producto ProductoBase @relation(fields: [idProductoBase], references: [id], onDelete: Cascade)
   // Removed relation to ProductoSalidaComponenteIndividual
   alertasReglas AlertaRegla[]
 }
@@ -224,7 +224,7 @@ model MovimientoInventario {
   peso           Float
   fecha          DateTime @default(now())
 
-  subparteLote SubparteLote @relation(fields: [subparteLoteId], references: [id])
+  subparteLote SubparteLote @relation(fields: [subparteLoteId], references: [id], onDelete: Cascade)
 }
 
 /* ================================
@@ -255,12 +255,12 @@ model AlertaRegla {
   activa             Boolean  @default(true)
   fechaCreada        DateTime @default(now())
 
-  lote               Lote?            @relation(fields: [loteId], references: [id])
-  categoriaLote      CategoriaLote?   @relation(fields: [categoriaLoteId], references: [id])
-  subparteLote       SubparteLote?    @relation(fields: [subparteLoteId], references: [id])
-  loteIndividual     LoteIndividual?  @relation(fields: [loteIndividualId], references: [idLote])
-  producto           ProductoBase?    @relation(fields: [productoId], references: [id])
-  subparteBase       SubparteBase?    @relation(fields: [subparteBaseId], references: [id])
+  lote               Lote?            @relation(fields: [loteId], references: [id], onDelete: Cascade)
+  categoriaLote      CategoriaLote?   @relation(fields: [categoriaLoteId], references: [id], onDelete: Cascade)
+  subparteLote       SubparteLote?    @relation(fields: [subparteLoteId], references: [id], onDelete: Cascade)
+  loteIndividual     LoteIndividual?  @relation(fields: [loteIndividualId], references: [idLote], onDelete: Cascade)
+  producto           ProductoBase?    @relation(fields: [productoId], references: [id], onDelete: Cascade)
+  subparteBase       SubparteBase?    @relation(fields: [subparteBaseId], references: [id], onDelete: Cascade)
 }
 
 /* ================================
@@ -293,5 +293,5 @@ model RegistroMerma {
   
   fechaRegistro          DateTime @default(now())
   
-  lote                   Lote     @relation(fields: [idLote], references: [id])
+  lote                   Lote     @relation(fields: [idLote], references: [id], onDelete: Cascade)
 }
