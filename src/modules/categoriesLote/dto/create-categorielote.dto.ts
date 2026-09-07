@@ -27,6 +27,15 @@ export class CreateCategoriaLoteDto {
   pesoCategoriaKg: number;
 
   @ApiProperty({
+    description: 'Unidades',
+    example: 2,
+    required: false,
+  })
+  @IsNumber()
+  @IsOptional()
+  unidades?: number;
+
+  @ApiProperty({
     description: 'Fecha de registro',
     example: '2025-12-02T10:00:00Z',
     required: false,

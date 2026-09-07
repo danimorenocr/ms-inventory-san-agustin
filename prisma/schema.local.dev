@@ -150,6 +150,7 @@ model CategoriaLote {
   idLote          Int
   idCategoriaBase Int
   pesoCategoriaKg Float
+  unidades        Int?
   fechaRegistro   DateTime @default(now())
 
   lote          Lote          @relation(fields: [idLote], references: [id], onDelete: Cascade)
@@ -165,6 +166,7 @@ model SubparteLote {
   idCategoriaLote Int
   idSubparteBase  Int
   pesoSubparteKg  Float
+  unidades        Int?
   fechaPesado     DateTime @default(now())
 
   lote          Lote          @relation(fields: [idLote], references: [id], onDelete: Cascade)

@@ -51,17 +51,25 @@ export class CategoriaLoteService {
     await this.findOne(id);
     const updated = await this.repository.update(id, updateCategoriaLoteDto);
 
-    // Si el peso de la categoría se actualizó, sincronizar con la subparte si es única (ej: Cerdo)
-    if (updateCategoriaLoteDto.pesoCategoriaKg !== undefined) {
+    // Si el peso o unidades de la categoría se actualizaron, sincronizar con la subparte si es única (ej: Cerdo)
+    if (updateCategoriaLoteDto.pesoCategoriaKg !== undefined || updateCategoriaLoteDto.unidades !== undefined) {
       const categoryData = await this.repository.findOne(id);
       const subpartes = categoryData?.subpartes || [];
       
       if (subpartes.length === 1) {
+        const subparteUpdate: any = {};
+        if (updateCategoriaLoteDto.pesoCategoriaKg !== undefined) {
+          subparteUpdate.pesoSubparteKg = updateCategoriaLoteDto.pesoCategoriaKg;
+        }
+        if (updateCategoriaLoteDto.unidades !== undefined) {
+          subparteUpdate.unidades = updateCategoriaLoteDto.unidades;
+        }
+
         await this.prisma.subparteLote.update({
           where: { id: subpartes[0].id },
-          data: { pesoSubparteKg: updateCategoriaLoteDto.pesoCategoriaKg },
+          data: subparteUpdate,
         });
-        console.log(`🔄 Sincronizado pesoSubparteKg para la subparte única de la categoría ${id} a ${updateCategoriaLoteDto.pesoCategoriaKg} kg.`);
+        console.log(`🔄 Sincronizado subparte única de la categoría ${id}:`, subparteUpdate);
       }
     }
 
