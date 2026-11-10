@@ -110,6 +110,7 @@ npx prisma generate --schema=prisma/schema.prisma
 npx prisma generate --schema=prisma/schema.local.prisma
 ```
 
+asasas
 ---
 
 ## 🐷 Solución de Sincronización de Partes del Cerdo (Cortes Primarios)
