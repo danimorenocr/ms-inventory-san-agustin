@@ -1,4 +1,4 @@
-import { IsNumber, IsNotEmpty, IsArray, ValidateNested, Min } from 'class-validator';
+import { IsNumber, IsNotEmpty, IsArray, IsOptional, ValidateNested, Min } from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class StockCheckItemDto {
@@ -9,6 +9,12 @@ export class StockCheckItemDto {
     @IsNumber()
     @Min(0)
     pesoRequerido: number;
+
+    // Unidades solicitadas (productos que se venden por unidad)
+    @IsOptional()
+    @IsNumber()
+    @Min(0)
+    unidadesRequeridas?: number;
 }
 
 export class ValidateStockDto {

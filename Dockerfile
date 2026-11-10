@@ -8,7 +8,6 @@ COPY . .
 RUN npx prisma generate --schema=prisma/schema.prisma
 RUN npx prisma generate --schema=prisma/schema.local.dev
 RUN npm run build
-RUN npx tsc prisma/seed.ts --outDir dist/prisma --module commonjs --target es2021 --esModuleInterop
 
 # Production stage
 FROM node:20-alpine

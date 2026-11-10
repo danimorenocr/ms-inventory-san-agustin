@@ -166,6 +166,9 @@ model SubparteLote {
   idSubparteBase  Int
   pesoSubparteKg  Float
   unidades        Int?
+  faltante            Boolean  @default(false)
+  faltanteDescripcion  String?
+  faltanteImagen       String?
   fechaPesado     DateTime @default(now())
 
   lote          Lote          @relation(fields: [idLote], references: [id], onDelete: Cascade)

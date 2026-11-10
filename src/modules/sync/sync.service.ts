@@ -380,7 +380,7 @@ export class SyncService implements OnModuleInit {
       for (const sl of subLotes) {
         await this.prismaLocal.subparteLote.upsert({
           where: { id: sl.id },
-          update: { idLote: sl.idLote, idCategoriaLote: sl.idCategoriaLote, idSubparteBase: sl.idSubparteBase, pesoSubparteKg: sl.pesoSubparteKg, fechaPesado: sl.fechaPesado },
+          update: { idLote: sl.idLote, idCategoriaLote: sl.idCategoriaLote, idSubparteBase: sl.idSubparteBase, pesoSubparteKg: sl.pesoSubparteKg, unidades: sl.unidades, faltante: sl.faltante, faltanteDescripcion: sl.faltanteDescripcion, faltanteImagen: sl.faltanteImagen, fechaPesado: sl.fechaPesado },
           create: sl,
         });
       }

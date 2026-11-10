@@ -1,4 +1,4 @@
-import { IsInt, IsNotEmpty, IsNumber, IsOptional, IsDateString } from 'class-validator';
+import { IsInt, IsNotEmpty, IsNumber, IsOptional, IsDateString, IsBoolean, IsString } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class CreateSubparteLoteDto {
@@ -51,4 +51,19 @@ export class CreateSubparteLoteDto {
   @IsDateString()
   @IsOptional()
   fechaPesado?: string;
+
+  @ApiProperty({ description: "Parte que no llegó (peso 0, requiere imagen)", required: false })
+  @IsBoolean()
+  @IsOptional()
+  faltante?: boolean;
+
+  @ApiProperty({ description: "Descripción de la parte faltante", required: false })
+  @IsString()
+  @IsOptional()
+  faltanteDescripcion?: string;
+
+  @ApiProperty({ description: "Imagen (data URL) de evidencia de la parte faltante", required: false })
+  @IsString()
+  @IsOptional()
+  faltanteImagen?: string;
 }

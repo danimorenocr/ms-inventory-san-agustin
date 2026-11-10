@@ -106,6 +106,65 @@ export class InventoryService {
   }
 
   /**
+   * Unidades disponibles en subpartes registradas SOLO por unidades
+   * (unidades > 0 y sin peso). No afecta lotes registrados por kilos.
+   */
+  private async getUnidadesDisponibles(subparteBaseIds: number[]): Promise<number> {
+    if (!subparteBaseIds.length) return 0;
+    const agg = await this.prisma.subparteLote.aggregate({
+      where: {
+        idSubparteBase: { in: subparteBaseIds },
+        pesoSubparteKg: { lte: 0 },
+        unidades: { gt: 0 },
+      },
+      _sum: { unidades: true },
+    });
+    return agg._sum.unidades || 0;
+  }
+
+  /**
+   * Descuenta unidades (FIFO) de subpartes registradas solo por unidades.
+   * Devuelve false si no hay unidades suficientes (no descuenta nada).
+   */
+  private async descontarUnidadesSubparte(
+    subparteBaseIds: number[],
+    unidades: number,
+    ventaId?: number,
+  ): Promise<boolean> {
+    const lotes = await this.prisma.subparteLote.findMany({
+      where: {
+        idSubparteBase: { in: subparteBaseIds },
+        pesoSubparteKg: { lte: 0 },
+        unidades: { gt: 0 },
+      },
+      orderBy: { fechaPesado: 'asc' },
+    });
+
+    if (lotes.reduce((s, l) => s + (l.unidades || 0), 0) < unidades) return false;
+
+    let restante = unidades;
+    for (const lote of lotes) {
+      if (restante <= 0) break;
+      const consumir = Math.min(lote.unidades || 0, restante);
+      await this.prisma.subparteLote.update({
+        where: { id: lote.id },
+        data: { unidades: { decrement: consumir } },
+      });
+      await this.prisma.movimientoInventario.create({
+        data: {
+          tipo: 'VENTA',
+          referenciaId: ventaId,
+          subparteLoteId: lote.id,
+          subparteBaseId: lote.idSubparteBase,
+          peso: 0,
+        },
+      });
+      restante -= consumir;
+    }
+    return true;
+  }
+
+  /**
    * Valida si hay stock suficiente para un ProductoSalida
    * Considera tanto SubparteLote como LoteIndividual
    */
@@ -148,6 +207,15 @@ export class InventoryService {
       const productoBaseIds = productoSalida.componentesIndividual.map(
         (c) => c.productoBaseId,
       );
+
+      // Producto que se vende por unidad: si hay stock registrado por unidades, validar contra unidades
+      if (productoSalida.unidad === 'unidad' && (item.unidadesRequeridas ?? 0) > 0) {
+        const unidadesDisponibles = await this.getUnidadesDisponibles(subparteBaseIds);
+        if (unidadesDisponibles >= item.unidadesRequeridas) {
+          console.log(`   ✅ Stock suficiente por unidades (${unidadesDisponibles} >= ${item.unidadesRequeridas})`);
+          continue;
+        }
+      }
 
       // Obtener detalles de SubparteBase y ProductoBase
       const [subpartesInfo, productosBaseInfo] = await Promise.all([
@@ -478,6 +546,25 @@ export class InventoryService {
 
     if (!combo) {
       throw new NotFoundException(`ProductoSalida ${productoSalidaId} no encontrado`);
+    }
+
+    // Producto que se vende por unidad: descontar unidades si hay stock registrado por unidades
+    if (combo.unidad === 'unidad' && (unidades ?? 0) > 0 && combo.componentes.length > 0) {
+      const descontado = await this.descontarUnidadesSubparte(
+        combo.componentes.map(c => c.subparteBaseId),
+        unidades,
+        ventaId,
+      );
+      if (descontado) {
+        console.log(`🔢 Descontadas ${unidades} unidad(es) de "${combo.nombre}"`);
+        return {
+          success: true,
+          pesoDescontado: 0,
+          unidadesDescontadas: unidades,
+          productoNombre: combo.nombre,
+          itemsDescontados: 1,
+        };
+      }
     }
 
     const totalComponentes = combo.componentes.length + combo.componentesIndividual.length;
